@@ -16,7 +16,15 @@
         .box-title {
             text-align: center;
         }
-          
+       
+    .ul li.custom-tab1 {
+      width: 150px;
+    }
+    
+    .ul li.custom-tab2 {
+      width: 250px;
+    }'
+    
        .meu-codigo {
         display: block;
         padding: 9.5px;
@@ -213,9 +221,13 @@
       
       
       .tabbable > .nav > li > a{
-      background-color:#11104d;
-      color: white
+      background-color:#FFFFFF;
+      color: black
       }
+      
+      body {background-color: #FFFFFF;}
+      
+      
       "
       )
     ),
@@ -247,20 +259,11 @@
         tags$div(
           actionButton(
             inputId = "consulta",
-            label = "Consulta dos dados",
+            label = "Dados",
             class = "navbar-button",
             icon = icon("table")
           ),
           id = "div-navbar-como-usar"
-        ),
-        tags$div(
-          actionButton(
-            inputId = "exp",
-            label = "Exploração dos dados",
-            class = "navbar-button",
-            icon = icon("globe-americas")
-          ),
-          id = "div-navbar-exp-dados"
         ),
         tags$div(
           actionButton(
@@ -282,13 +285,14 @@
         ),
         tags$div(
           actionButton(
-            inputId = "diference",
-            label = "Diferenciação",
+            inputId = "decomp",
+            label = "Modelo",
             class = "navbar-button",
-            icon = icon("calendar")
+            icon = icon("warning")
           ),
           id = "div-navbar-pred"
         ),
+        
         id = "div-navbar-tabs",
         class = "navigation-menu"
       ),
