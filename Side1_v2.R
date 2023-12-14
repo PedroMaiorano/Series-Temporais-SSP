@@ -1,52 +1,42 @@
-Side_hom <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
-                                          label = "Filtrar por data",
-                                          start = "2017-01-01", end = "2022-12-31",
-                                          min = "2017-01-01", max = "2022-12-31",
-                                          separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
-                             inputId = "cor_pele",
-                             label = "Cor da pele", 
-                             choices = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
-                             selected = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
-                             options = list(
-                               `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           pickerInput(
-                             inputId = "sexo",
-                             label = "Sexo", 
-                             choices = c("feminino","indefinido","masculino"),
-                             selected = c("feminino","indefinido","masculino"),
-                             options = list(
-                               `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           sliderInput("idade_slider", "Filtrar por Idade:",
-                                       min = -1, max = 97, value = c(-1, 97)),
-                           
-                           fluidRow(
-                            
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+Side_hom <- 
+  fluidRow(
+    h3("Filtro dos dados"),
+    br(),
+    dateRangeInput('dateRange2',
+                   label = "Filtrar por data",
+                   start = "2017-01-01", end = "2022-12-31",
+                   min = "2017-01-01", max = "2022-12-31",
+                   separator = " - ", format = "dd/mm/yy",
+                   startview = 'year', language = 'pt-BR', weekstart = 1
+    ),
+    pickerInput(
+      inputId = "cor_pele",
+      label = "Cor da pele", 
+      choices = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
+      selected = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE
+    ),
+    pickerInput(
+      inputId = "sexo",
+      label = "Sexo", 
+      choices = c("feminino","indefinido","masculino"),
+      selected = c("feminino","indefinido","masculino"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE
+    ),
+    sliderInput("idade_slider", "Filtrar por Idade:",
+                min = -1, max = 97, value = c(-1, 97)),
+    actionButton("aplicar","Modificar os dados"),
+    actionButton("reset","Não usar Filtro")
+    
+    
+    
+  )  
+
+                         
 
 
 Side_fem <- sidebarPanel(width=12,
@@ -1015,3 +1005,26 @@ Side_furv <- sidebarPanel(width=12,
                           )
 )
 
+vetor <- c(
+  "id_bo"                  
+  ,"id_laudo"     
+  ,"datahora_iml_reg"         
+  ,"index"                  
+  ,"data_bo_reg"            
+  ,"id_dp_reg"                  
+  ,"data_ocorr"             
+  ,"hora_ocorr"              
+  ,"num_logradouro_ocorr"   
+  ,"latitude_ocorr"         
+  ,"longitude_ocorr"    
+  ,"datahora_inicio_bo"          
+  ,"datahora_bo_reg"     
+  ,"marca_veiculo"          
+  ,"cor_veiculo"            
+  ,"cidade_veiculo"         
+  ,"uf_veiculo"             
+  ,"ano_fab_veiculo"        
+  ,"ano_mod_veiculo"     
+  ,"V1"                  
+  ,"qtde_celular","marca_celular",
+  "logradouro_ocorr")
