@@ -40,7 +40,6 @@ plan(multisession)
 #install.packages("forecast",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
 
 #install.packages("funtimes",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
-
 Side_hom <- 
   fluidRow(
     h3("Filtro dos dados"),
@@ -73,134 +72,81 @@ Side_hom <-
     sliderInput("idade_slider", "Filtrar por Idade:",
                 min = -1, max = 97, value = c(-1, 97)),
     actionButton("aplicar","Modificar os dados"),
-    actionButton("reset","Não usar Filtro")
-    
-    
-    
-  )  
+    actionButton("reset","Não usar Filtro"))  
+
+                         
+
+
+Side_fem <- 
+             fluidRow(
+               h3("Filtro dos dados"),
+               br(),
+               dateRangeInput('dateRange2',
+                              label = "Filtrar por data",
+                              start = "2015-04-12", end = "2022-12-31",
+                              min = "2015-04-12", max = "2022-12-31",
+                              separator = " - ", format = "dd/mm/yy",
+                              startview = 'year', language = 'pt-BR', weekstart = 1),
+               pickerInput(
+                 inputId = "cor_pele",
+                 label = "Cor da pele", 
+                 choices = c("amarela","branca","ignorada","outros","parda","preta"),
+                 selected = c("amarela","branca","ignorada","outros","parda","preta"),
+                 options = list(
+                   `actions-box` = TRUE), 
+                 multiple = TRUE),
+               sliderInput("idade_slider", "Filtrar por Idade:", min = -1, max = 87, value = c(-1,87)),
+               actionButton("aplicar","Modificar os dados"),
+               actionButton("reset","Não usar Filtro"))  
 
 
 
-
-Side_fem <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
-                                          label = "Filtrar por data",
-                                          start = "2015-04-12", end = "2022-12-31",
-                                          min = "2015-04-12", max = "2022-12-31",
-                                          separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
-                             inputId = "cor_pele",
-                             label = "Cor da pele", 
-                             choices = c("amarela","branca","ignorada","outros","parda","preta"),
-                             selected = c("amarela","branca","ignorada","outros","parda","preta"),
-                             options = list(
-                               `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           sliderInput("idade_slider", "Filtrar por Idade:", min = -1, max = 87, value = c(-1,87)),
-                           
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                         )
-)
-
-Side_lat <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_lat <-  fluidRow( 
+                  h3("Filtro dos dados"),
+                  br(),
+                  dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2018-01-03", end = "2022-12-31",
                                           min = "2018-01-03", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
-                             inputId = "cor_pele",
+                                          startview = 'year', language = 'pt-BR', weekstart = 1),
+                 pickerInput(inputId = "cor_pele",
                              label = "Cor da pele", 
                              choices = c("amarela","branca","não informado","parda","preta","vermelha"),
                              selected = c("amarela","branca","não informado","parda","preta","vermelha"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           pickerInput(
-                             inputId = "sexo",
+                             multiple = TRUE),
+                pickerInput(inputId = "sexo",
                              label = "Sexo", 
                              choices = c("feminino","indefinido","masculino"),
                              selected = c("feminino","indefinido","masculino"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           sliderInput("idade_slider", "Filtrar por Idade:",
+                             multiple = TRUE),
+                sliderInput("idade_slider", "Filtrar por Idade:",
                                        min = -1, max = 118, value = c(-1, 118)),
-                           
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                actionButton("aplicar","Modificar os dados"),
+                actionButton("reset","Não usar Filtro"))  
 
-Side_lcs <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_lcs <- fluidRow(
+                     h3("Filtro dos dados"),
+                     br(),
+                     dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2016-09-14", end = "2022-12-31",
                                           min = "2016-09-14", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
+                                          startview = 'year', language = 'pt-BR', weekstart = 1),
+                     pickerInput(
                              inputId = "cor_pele",
                              label = "Cor da pele", 
                              choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
                              selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           pickerInput(
+                             multiple = TRUE),
+                     pickerInput(
                              inputId = "sexo",
                              label = "Sexo", 
                              choices = c("feminino","indefinido","masculino"),
@@ -211,58 +157,40 @@ Side_lcs <- sidebarPanel(width=12,
                            ),
                            sliderInput("idade_slider", "Filtrar por Idade:",
                                        min = -1, max = 88, value = c(-1, 88)),
+                     actionButton("aplicar","Modificar os dados"),
+                     actionButton("reset","Não usar Filtro"))  
                            
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                          
 
-Side_mdi <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_mdi <- fluidRow(
+                    h3("Filtro dos dados"),
+                    br(),
+                    dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2013-01-01", end = "2022-12-31",
                                           min = "2013-01-01", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
+                                          startview = 'year', language = 'pt-BR', weekstart = 1),
+                    pickerInput(
                              inputId = "cor_pele",
                              label = "Cor da pele", 
                              choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
                              selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           pickerInput(
+                             multiple = TRUE),
+                    pickerInput(
                              inputId = "sexo",
                              label = "Sexo", 
                              choices = c("feminino","indefinido","masculino","não informado"),
                              selected = c("feminino","indefinido","masculino","não informado"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
+                             multiple = TRUE),
                            sliderInput("idade_slider", "Filtrar por Idade:",
                                        min = -1, max = 77, value = c(-1, 77)),
                            
-                           fluidRow(
+                    fluidRow(
                              column(7,pickerInput(
                                inputId = "corp",
                                label = "Situação do policial", 
@@ -271,46 +199,29 @@ Side_mdi <- sidebarPanel(width=12,
                                options = list(
                                  `actions-box` = TRUE), 
                                multiple = TRUE
-                             )),
+                             ))),
                              br(),
-                             
-                             column(4,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                             actionButton("aplicar","Modificar os dados"),
+                             actionButton("reset","Não usar Filtro"))  
 
-Side_mor <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_mor <- fluidRow(
+                     h3("Filtro dos dados"),
+                     br(),
+                     dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2013-01-01", end = "2022-12-31",
                                           min = "2013-01-01", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
+                                          startview = 'year', language = 'pt-BR', weekstart = 1),
+                     pickerInput(
                              inputId = "descr_local",
                              label = "Descrição do local de ocorrência", 
-                             choices = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
+                              choices = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
                              selected = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
                              options = list(
                                `actions-box` = TRUE), 
-                             multiple = TRUE
-                           ),
-                           pickerInput(
+                             multiple = TRUE),
+                     pickerInput(
                              inputId = "desdobramento",
                              label = "Desdobramento da ocorrência", 
                              choices = c(
@@ -334,66 +245,32 @@ Side_mor <- sidebarPanel(width=12,
                            sliderInput("idade_slider", "Filtrar por Idade:",
                                        min = -1, max = 123, value = c(-1,123)),
                            
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                     actionButton("aplicar","Modificar os dados"),
+                     actionButton("reset","Não usar Filtro"))  
 
-Side_iml <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_iml <- fluidRow(
+                    h3("Filtro dos dados"),
+                    br(),
+                    dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2016-04-01", end = "2022-12-31",
                                           min = "2016-04-01", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
+                                          startview = 'year', language = 'pt-BR', weekstart = ),
                            
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                    actionButton("aplicar","Modificar os dados"),
+                    actionButton("reset","Não usar Filtro"))  
 
-Side_dad <- sidebarPanel(width=12,
-                         fluidRow(
-                           column(10, 
-                                  h2("Filtro dos dados")
-                           ),
-                           br(),
-                           column(1,
-                                  actionButton("toggle_button", "+")
-                           )
-                         ),
-                         conditionalPanel(
-                           condition = "input.toggle_button % 2 == 1",
-                           
-                           dateRangeInput('dateRange2',
+Side_dad <- fluidRow(
+                     h3("Filtro dos dados"),
+                     br(),
+                     dateRangeInput('dateRange2',
                                           label = "Filtrar por data",
                                           start = "2021-01-05", end = "2022-12-31",
                                           min = "2021-01-05", max = "2022-12-31",
                                           separator = " - ", format = "dd/mm/yy",
-                                          startview = 'year', language = 'pt-BR', weekstart = 1
-                           ),
-                           pickerInput(
+                                          startview = 'year', language = 'pt-BR', weekstart = 1),
+                    pickerInput(
                              inputId = "natureza",
                              label = "Natureza da ocorrência", 
                              choices = c(
@@ -433,7 +310,7 @@ Side_dad <- sidebarPanel(width=12,
                              multiple = TRUE
                            ),
                            
-                           pickerInput(
+                        pickerInput(
                              inputId = "descr_local",
                              label = "Descrição do local da ocorrência", 
                              choices = c(
@@ -521,37 +398,20 @@ Side_dad <- sidebarPanel(width=12,
                              multiple = TRUE
                            ),
                            
-                           fluidRow(
-                             
-                             column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                           )
-                           
-                           
-                         )
-)
+                     actionButton("aplicar","Modificar os dados"),
+                     actionButton("reset","Não usar Filtro"))  
 
 
-Side_rouc <- sidebarPanel(width=12,
-                          fluidRow(
-                            column(10, 
-                                   h2("Filtro dos dados")
-                            ),
-                            br(),
-                            column(1,
-                                   actionButton("toggle_button", "+")
-                            )
-                          ),
-                          conditionalPanel(
-                            condition = "input.toggle_button % 2 == 1",
-                            
-                            dateRangeInput('dateRange2',
+Side_rouc <-  fluidRow(
+                      h3("Filtro dos dados"),
+                      br(),
+                      dateRangeInput('dateRange2',
                                            label = "Filtrar por data",
                                            start = "2010-01-01", end = "2022-12-31",
                                            min = "2010-01-01", max = "2022-12-31",
                                            separator = " - ", format = "dd/mm/yy",
-                                           startview = 'year', language = 'pt-BR', weekstart = 1
-                            ),
-                            sliderTextInput(
+                                           startview = 'year', language = 'pt-BR', weekstart = 1),
+                      sliderTextInput(
                               inputId = "quantidade_celular",
                               label = "Quantidade furtada", 
                               choices = c(
@@ -611,7 +471,7 @@ Side_rouc <- sidebarPanel(width=12,
                                 "9860", "99", "999", "9999", "não informado"
                               )[c(1,356)]
                             ),
-                            pickerInput(
+                        pickerInput(
                               inputId = "descr_local",
                               label = "Descrição do local", 
                               choices = c(
@@ -647,36 +507,19 @@ Side_rouc <- sidebarPanel(width=12,
                               multiple = TRUE
                             ),
                             
-                            fluidRow(
-                              
-                              column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                            )
-                            
-                            
-                          )
-)
+                      actionButton("aplicar","Modificar os dados"),
+                      actionButton("reset","Não usar Filtro"))  
 
-Side_furc <- sidebarPanel(width=12,
-                          fluidRow(
-                            column(10, 
-                                   h2("Filtro dos dados")
-                            ),
-                            br(),
-                            column(1,
-                                   actionButton("toggle_button", "+")
-                            )
-                          ),
-                          conditionalPanel(
-                            condition = "input.toggle_button % 2 == 1",
-                            
-                            dateRangeInput('dateRange2',
+Side_furc <- fluidRow(
+                    h3("Filtro dos dados"),
+                    br(),
+                    dateRangeInput('dateRange2',
                                            label = "Filtrar por data",
                                            start = "2010-01-01", end = "2022-12-31",
                                            min = "2010-01-01", max = "2022-12-31",
                                            separator = " - ", format = "dd/mm/yy",
-                                           startview = 'year', language = 'pt-BR', weekstart = 1
-                            ),
-                            sliderTextInput(
+                                           startview = 'year', language = 'pt-BR', weekstart = 1),
+                    sliderTextInput(
                               inputId = "quantidade_celular",
                               label = "Quantidade furtada", 
                               choices = c(
@@ -772,29 +615,13 @@ Side_furc <- sidebarPanel(width=12,
                               multiple = TRUE
                             ),
                             
-                            fluidRow(
-                              
-                              column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                            )
-                            
-                            
-                          )
-)
+                    actionButton("aplicar","Modificar os dados"),
+                    actionButton("reset","Não usar Filtro"))  
 
-Side_rouv <- sidebarPanel(width=12,
-                          fluidRow(
-                            column(10, 
-                                   h2("Filtro dos dados")
-                            ),
-                            br(),
-                            column(1,
-                                   actionButton("toggle_button", "+")
-                            )
-                          ),
-                          conditionalPanel(
-                            condition = "input.toggle_button % 2 == 1",
-                            
-                            dateRangeInput('dateRange2',
+Side_rouv <- fluidRow(
+                      h3("Filtro dos dados"),
+                      br(),
+                      dateRangeInput('dateRange2',
                                            label = "Filtrar por data",
                                            start = "2003-01-01", end = "2022-12-31",
                                            min = "2003-01-01", max = "2022-12-31",
@@ -915,37 +742,19 @@ Side_rouv <- sidebarPanel(width=12,
                               multiple = TRUE
                             ),
                             
-                            fluidRow(
-                              
-                              column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                            )
-                            
-                            
-                          )
-)
-
-
-Side_furv <- sidebarPanel(width=12,
-                          fluidRow(
-                            column(10, 
-                                   h2("Filtro dos dados")
-                            ),
-                            br(),
-                            column(1,
-                                   actionButton("toggle_button", "+")
-                            )
-                          ),
-                          conditionalPanel(
-                            condition = "input.toggle_button % 2 == 1",
-                            
-                            dateRangeInput('dateRange2',
+                      actionButton("aplicar","Modificar os dados"),
+                      actionButton("reset","Não usar Filtro"))  
+Side_furv <- fluidRow(
+                     h3("Filtro dos dados"),
+                     br(),
+                     dateRangeInput('dateRange2',
                                            label = "Filtrar por data",
                                            start = "2003-01-01", end = "2022-12-31",
                                            min = "2003-01-01", max = "2022-12-31",
                                            separator = " - ", format = "dd/mm/yy",
                                            startview = 'year', language = 'pt-BR', weekstart = 1
                             ),
-                            pickerInput(
+                    pickerInput(
                               inputId = "tipo_veiculo",
                               label = "Tipo de veiculo", 
                               choices = c(
@@ -1039,14 +848,8 @@ Side_furv <- sidebarPanel(width=12,
                               multiple = TRUE
                             ),
                             
-                            fluidRow(
-                              
-                              column(4,offset = 7,actionButton("aplicar","Aplicar mudanças"))
-                            )
-                            
-                            
-                          )
-)
+                    actionButton("aplicar","Modificar os dados"),
+                    actionButton("reset","Não usar Filtro"))  
 
 vetor <- c(
   "id_bo"                  
