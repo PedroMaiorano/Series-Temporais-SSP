@@ -3530,20 +3530,20 @@ server <- function(input, output, session) {
     modelo_sarima <- input$Modelo_Sarima
     
     if (modelo_usuario){
-      vetor <- append(vetor2,"usuario")
+      vetor2 <- append(vetor2,"usuario")
     }
     
     if (modelo_ingenuo){
-      vetor <- append(vetor2,"modelo_pia")
+      vetor2 <- append(vetor2,"modelo_pia")
     }
     
     if (modelo_sarima){
-      vetor <- append(vetor2,"auto_sarima")
+      vetor2 <- append(vetor2,"auto_sarima")
     }
     
     fit(fit_serie(SERIE,modelos = vetor2))
     
-    updatePickerInput(session,"model",choices = vetor)
+    updatePickerInput(session,"model",choices = vetor2)
   })
   
   
