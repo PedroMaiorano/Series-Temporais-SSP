@@ -27,6 +27,7 @@ library(seastests)
 library(future.apply)
 library(shinycssloaders)
 library(shinyalert)
+library(zoo)
 plan(multisession)
 
 #install.packages("tseries",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
