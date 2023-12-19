@@ -1,9 +1,7 @@
     #Server
     
     
-    server <- function(input, output, session) {
-      
-      
+server <- function(input, output, session) {
       #### Variaveis reativas (variaveis globais que podem trocar de valores com a interação do usuário)
       estado <- reactiveVal("inicio")
       tema <- reactiveVal(NULL)
@@ -20,6 +18,7 @@
       dado11 <- reactiveVal(NULL)
       dado12 <- reactiveVal(NULL)
       
+      top_info <- reactiveVal(NULL)
       
       dado_real <- reactiveVal(NULL)
       dado_filtrado <- reactiveVal(NULL)
@@ -61,11 +60,11 @@
         list(src = filename, contentType = "image/png")
       })
       ################## Desabilitando os botões de navegação
+     # shinyjs::disable("exp")
+     # shinyjs::disable("diference")
       shinyjs::disable("consulta")
-      shinyjs::disable("exp")
       shinyjs::disable("map")
       shinyjs::disable("series")
-      shinyjs::disable("diference")
       shinyjs::disable("decomp")
       
       ##### oBServes inciaiis
@@ -75,26 +74,34 @@
         dado_filtrado(dado_real())
       })
       
-      observeEvent(input$button1,{
+      observeEvent(input$button1, {
         estado("consulta")
-        modalContent <- modalDialog(
-          title = "Aviso!",
-          "Modificações dos dados serão propagados para todas as análises.
-                  Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
-          footer = tagList(
-            actionButton("close_popup", "Fechar")
-          )
-        )
-        
-        # Mostra o modal dialog
-        showModal(modalContent)
-        
-        # Adiciona reação ao botão de fechar
-        observeEvent(input$close_popup, {
-          removeModal()
-        }
-        )
-      })
+       # if (!modal_state()) {
+       #   # Cria o conteúdo do modal
+       #   modalContent <- modalDialog(
+       #     title = "Aviso!",
+       #     "Modificações dos dados serão propagados para todas as análises.
+       #   Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
+       #     footer = tagList(
+       #       actionButton("close_popup", "Fechar")
+       #     )
+       #   )
+       #   
+       #   
+       #   showModal(modalContent)
+       #   
+       #   
+       #   modal_state(TRUE)
+          
+          
+          shinyalert(
+            title = "Aviso!",
+            text = "Modificações dos dados serão propagados para todas as análises.
+            Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
+            type = "info",
+            confirmButtonCol = "#11104d")
+        })
+      
       
       
       criarObservador <- function(inputId, estado) {
@@ -107,37 +114,36 @@
         observeEvent(input[[inputId]], {
           tema(inputId)
           shinyjs::enable("consulta")
-          
-          
+          shinyjs::enable("map")
+          shinyjs::enable("series")
           ##################### Inicio 
           
           
           
-          output$inicial <- renderUI({ 
-            mainPanel(
+          output$inicial2 <- renderUI({ 
+            fluidPage(
               fluidRow(
-                column(12, align = "center", h1(paste0(tema()), style = "text-align: center;"))
+                column(10, align = "center", h1(paste0(tema()), style = "text-align: center;")),
+                actionButton("button1", "Visualizar dados", class = "custom-button")
               ),
-              fluidRow(
-                column(3,actionButton("tes", "Escolher outro tema", class = "custom-button") ),
-                column(2,offset = 6, actionButton("button1", "Visualizar dados", class = "custom-button"))),
               
-              if (tema() == "IML") {
+              if (tema() == "IML (Instituto Médico Legal)") {
                 
                 Side1(Side_iml)
                 
                 if (is.null(dado7())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 3)
                   dado7(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/iml_parcial.csv"))
                   dado7(dado7() %>% mutate(data_ocorr = as.Date(datahora_iml_reg)))
                   dado7(dado7() %>% mutate(data_bo_reg = as.Date(datahora_iml_reg)))
                 }
                 dado_real(dado7())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("Os dados apresentam informações básicas sobre todas as 
-                           entradas de óbitos no IML desde 2013, quando foi implantado no Estado, pela Superintendência da Polícia 
-                           Técnico-Científica, o serviço digital Gestão de Laudos (GDL). (Fonte: GDL da SPTC).")
-                )
+                               entradas de óbitos no IML desde 2013, quando foi implantado no Estado, pela Superintendência da Polícia 
+                               Técnico-Científica, o serviço digital Gestão de Laudos (GDL). (Fonte: GDL da SPTC).")
+                ) )
                 
               }
               
@@ -147,70 +153,73 @@
                 
                 
                 if (is.null(dado3())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 1)
                   dado3(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/latrocinio_parcial.csv"))
                 }
                 
                 dado_real(dado3())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>O latrocínio é um crime hediondo descrito pelo parágrafo 3 do artigo 157 do código penal, é definido como a subtração de coisa móvel alheia mediante grave ameaça ou violência a pessoa, em que da violência resultar lesão corporal grave ou morte, sem agravantes ou alterações de pena descritas.</p>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de janeiro de 2018 a dezembro de 2022.</p>
-            ") )
+                  <p>O latrocínio é um crime hediondo descrito pelo parágrafo 3 do artigo 157 do código penal, é definido como a subtração de coisa móvel alheia mediante grave ameaça ou violência a pessoa, em que da violência resultar lesão corporal grave ou morte, sem agravantes ou alterações de pena descritas.</p>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de janeiro de 2018 a dezembro de 2022.</p>
+                ") ) )
               }
               
               
-              else if (tema() == "LCSM") {
+              else if (tema() == "Lesão Corporal Seguida de Morte") {
                 Side1(Side_lcs)
                 
                 if (is.null(dado4())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 1)
                   dado4(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/lesaoCSM_parcial.csv"))
                 }
                 
                 dado_real(dado4())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>A lesão corporal seguida de morte é descrita pelo parágrafo 3 do artigo 129 do código penal, definida pela ofensa à integridade corporal ou saúde de outrem tendo por resultado a morte, com as circunstâncias evidenciando que o agente não quis o resultado, nem assumiu o risco de produzi-lo.</p>
-              <p>É considerado agravado quando:</p>
-              <ul>
-                <li>Se a lesão for praticada contra ascendente, descendente, irmão, cônjuge ou companheiro, ou com quem conviva ou tenha convivido, ou, ainda, prevalecendo-se o agente das relações domésticas, de coabitação ou de hospitalidade</li>
-                <li>Se a lesão for praticada contra autoridade ou agente descrito nos arts. 142 e 144 da Constituição Federal, integrantes do sistema prisional e da Força Nacional de Segurança Pública, no exercício da função ou em decorrência dela, ou contra seu cônjuge, companheiro ou parente consanguíneo até terceiro grau, em razão dessa condição, a pena é aumentada de um a dois terços</li>
-                <li>Se a lesão for praticada contra a mulher, por razões da condição do sexo feminino</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ") )  
+                  <p>A lesão corporal seguida de morte é descrita pelo parágrafo 3 do artigo 129 do código penal, definida pela ofensa à integridade corporal ou saúde de outrem tendo por resultado a morte, com as circunstâncias evidenciando que o agente não quis o resultado, nem assumiu o risco de produzi-lo.</p>
+                  <p>É considerado agravado quando:</p>
+                  <ul>
+                    <li>Se a lesão for praticada contra ascendente, descendente, irmão, cônjuge ou companheiro, ou com quem conviva ou tenha convivido, ou, ainda, prevalecendo-se o agente das relações domésticas, de coabitação ou de hospitalidade</li>
+                    <li>Se a lesão for praticada contra autoridade ou agente descrito nos arts. 142 e 144 da Constituição Federal, integrantes do sistema prisional e da Força Nacional de Segurança Pública, no exercício da função ou em decorrência dela, ou contra seu cônjuge, companheiro ou parente consanguíneo até terceiro grau, em razão dessa condição, a pena é aumentada de um a dois terços</li>
+                    <li>Se a lesão for praticada contra a mulher, por razões da condição do sexo feminino</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ") )  )
               }
               
               
               else if (tema() == "Roubo de Veículo") {
-                Side1(Side_rouv)
+                  Side1(Side_rouv)
                 
                 
                 if (is.null(dado11())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 10)
                   dado11(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/rouboVeiculo_parcial.csv"))
                   dado11(  dado11() %>%
                              mutate(data_bo_reg = as.Date(datahora_bo_reg),
                                     nome_municipio_circ=cidade_ocorr))
-                  
                 }
                 
                 dado_real(dado11())
                 
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>O roubo é descrito no artigo 157 do Código Penal, é caracterizado pela subtração de bem material mediante grave ameaça ou violência, é agravado quando:</p>
-              <ul>
-                <li>Há o concurso de duas ou mais pessoas</li>
-                <li>A vítima está em serviço de transporte de valores e o agente conhece tal circunstância</li>
-                <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
-                <li>O agente mantém a vítima em seu poder, restringindo sua liberdade</li>
-                <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
-                <li>A violência ou grave ameaça é exercida com emprego de arma branca ou arma de fogo</li>
-                <li>Há destruição ou rompimento de obstáculo mediante o emprego de explosivo ou de artefato análogo que cause perigo comum</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ") )
+                  <p>O roubo é descrito no artigo 157 do Código Penal, é caracterizado pela subtração de bem material mediante grave ameaça ou violência, é agravado quando:</p>
+                  <ul>
+                    <li>Há o concurso de duas ou mais pessoas</li>
+                    <li>A vítima está em serviço de transporte de valores e o agente conhece tal circunstância</li>
+                    <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
+                    <li>O agente mantém a vítima em seu poder, restringindo sua liberdade</li>
+                    <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
+                    <li>A violência ou grave ameaça é exercida com emprego de arma branca ou arma de fogo</li>
+                    <li>Há destruição ou rompimento de obstáculo mediante o emprego de explosivo ou de artefato análogo que cause perigo comum</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ") ) )
                 
                 
                 
@@ -221,6 +230,8 @@
                 Side1(Side_furv)
                 
                 if (is.null(dado12())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 10)
+                  showNotification()
                   dado12(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/furtoVeiculo_parcial.csv"))
                   dado12(  dado12() %>%
                              mutate(data_bo_reg = as.Date(datahora_bo_reg),
@@ -229,35 +240,36 @@
                 }
                 
                 dado_real(dado12())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>O furto é descrito no artigo 155 do Código Penal, é caracterizado pela subtração de bem material alheio (destacando-se a ausência de ameaça grave ou violência), é agravado se:</p>
-              <ul>
-                <li>O crime é praticado durante o repouso noturno</li>
-                <li>O crime é cometido com destruição ou rompimento de obstáculo à subtração da coisa</li>
-                <li>O crime é cometido com abuso de confiança, ou mediante fraude, escalada ou destreza</li>
-                <li>O crime é cometido com emprego de chave falsa</li>
-                <li>O crime é cometido mediante concurso de duas ou mais pessoas</li>
-                <li>Houver emprego de explosivo ou de artefato análogo que cause perigo comum</li>
-                <li>O furto mediante fraude é cometido por meio de dispositivo eletrônico ou informático, conectado ou não à rede de computadores, com ou sem a violação de mecanismo de segurança ou a utilização de programa malicioso, ou por qualquer outro meio fraudulento análogo</li>
-                <li>O crime é praticado mediante a utilização de servidor mantido fora do território nacional</li>
-                <li>O crime é praticado contra idoso ou vulnerável</li>
-                <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
-                <li>A subtração for de semovente domesticável de produção, ainda que abatido ou dividido em partes no local da subtração</li>
-                <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ") )
+                  <p>O furto é descrito no artigo 155 do Código Penal, é caracterizado pela subtração de bem material alheio (destacando-se a ausência de ameaça grave ou violência), é agravado se:</p>
+                  <ul>
+                    <li>O crime é praticado durante o repouso noturno</li>
+                    <li>O crime é cometido com destruição ou rompimento de obstáculo à subtração da coisa</li>
+                    <li>O crime é cometido com abuso de confiança, ou mediante fraude, escalada ou destreza</li>
+                    <li>O crime é cometido com emprego de chave falsa</li>
+                    <li>O crime é cometido mediante concurso de duas ou mais pessoas</li>
+                    <li>Houver emprego de explosivo ou de artefato análogo que cause perigo comum</li>
+                    <li>O furto mediante fraude é cometido por meio de dispositivo eletrônico ou informático, conectado ou não à rede de computadores, com ou sem a violação de mecanismo de segurança ou a utilização de programa malicioso, ou por qualquer outro meio fraudulento análogo</li>
+                    <li>O crime é praticado mediante a utilização de servidor mantido fora do território nacional</li>
+                    <li>O crime é praticado contra idoso ou vulnerável</li>
+                    <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
+                    <li>A subtração for de semovente domesticável de produção, ainda que abatido ou dividido em partes no local da subtração</li>
+                    <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ") ))
                 
                 
               }
               
               
-              else if (tema() == "MDIP") {
+              else if (tema() == "Morte Decorrente de Intervenção Policial") {
                 Side1(Side_mdi)
                 
                 if (is.null(dado5())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 1)
                   dado5(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/morteDIP_parcial.csv"))
                 }
                 
@@ -265,9 +277,9 @@
                 
                 fluidRow(
                   HTML("
-              <p>A morte decorrente de intervenção policial é um crime militar impróprio, tipificado no artigo 205 artigo 9º, inciso II, alínea b da Constituição Federal de 1988, caracterizado pelos abusos cometidos pelas forças policiais.</p>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ")  )
+                  <p>A morte decorrente de intervenção policial é um crime militar impróprio, tipificado no artigo 205 artigo 9º, inciso II, alínea b da Constituição Federal de 1988, caracterizado pelos abusos cometidos pelas forças policiais.</p>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ")  )
               }
               
               
@@ -275,23 +287,24 @@
                 Side1(Side_mor)
                 
                 if (is.null(dado6())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 2)
                   dado6(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/morteSuspeita_parcial.csv"))
                   dado6(dado6() %>% mutate(data_bo_reg = as.Date(datahora_bo_reg)))
                 }
                 
                 dado_real(dado6())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>A morte suspeita é definida nos incisos I a IV, do Artigo 2º, da Portaria DGP nº 14/2005, descrita como:</p>
-              <ol>
-                <li>Encontro de cadáver sem lesões aparentes: Encontro de cadáver, ou parte relevante deste, em qualquer estágio de decomposição, no qual existam lesões aparentes ou quaisquer outras circunstâncias que, mesmo indiciariamente, apontem para a produção violenta da morte</li>
-                <li>Dúvidas razoáveis quanto a suicídio ou morte provocada: Morte violenta em que subsistam dúvidas razoáveis quanto a tratar-se de suicídio ou morte provocada por outrem</li>
-                <li>Morte acidental: Morte não natural onde existam indícios de causação acidental do evento exclusivamente por ato não intencional da própria vítima</li>
-                <li>Morte súbita e natural: Morte súbita, sem causa determinante aparente, ocorrida de modo imprevisto, com a vítima fora do respectivo domicílio e sem a assistência de médico, familiar ou responsável</li>
-              </ol>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            "))
+                  <p>A morte suspeita é definida nos incisos I a IV, do Artigo 2º, da Portaria DGP nº 14/2005, descrita como:</p>
+                  <ol>
+                    <li>Encontro de cadáver sem lesões aparentes: Encontro de cadáver, ou parte relevante deste, em qualquer estágio de decomposição, no qual existam lesões aparentes ou quaisquer outras circunstâncias que, mesmo indiciariamente, apontem para a produção violenta da morte</li>
+                    <li>Dúvidas razoáveis quanto a suicídio ou morte provocada: Morte violenta em que subsistam dúvidas razoáveis quanto a tratar-se de suicídio ou morte provocada por outrem</li>
+                    <li>Morte acidental: Morte não natural onde existam indícios de causação acidental do evento exclusivamente por ato não intencional da própria vítima</li>
+                    <li>Morte súbita e natural: Morte súbita, sem causa determinante aparente, ocorrida de modo imprevisto, com a vítima fora do respectivo domicílio e sem a assistência de médico, familiar ou responsável</li>
+                  </ol>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ")))
                 
               }
               
@@ -300,6 +313,7 @@
                 Side1(Side_dad)
                 
                 if (is.null(dado8())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 4)
                   dado8(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/dadosCriminais_parcial.csv", header = TRUE))
                 }
                 
@@ -315,6 +329,7 @@
                 Side1(Side_rouc)
                 
                 if (is.null(dado9())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 20)
                   dado9(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/rouboCelular_parcial.csv"))
                   dado9(  dado9() %>%
                             mutate(data_bo_reg = as.Date(datahora_bo_reg),
@@ -324,21 +339,21 @@
                 }
                 
                 dado_real(dado9())
-                
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   HTML("
-              <p>O roubo é descrito no artigo 157 do Código Penal, é caracterizado pela subtração de bem material mediante grave ameaça ou violência, é agravado quando:</p>
-              <ul>
-                <li>Há o concurso de duas ou mais pessoas</li>
-                <li>A vítima está em serviço de transporte de valores e o agente conhece tal circunstância</li>
-                <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
-                <li>O agente mantém a vítima em seu poder, restringindo sua liberdade</li>
-                <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
-                <li>A violência ou grave ameaça é exercida com emprego de arma branca ou arma de fogo</li>
-                <li>Há destruição ou rompimento de obstáculo mediante o emprego de explosivo ou de artefato análogo que cause perigo comum</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ")   )
+                  <p>O roubo é descrito no artigo 157 do Código Penal, é caracterizado pela subtração de bem material mediante grave ameaça ou violência, é agravado quando:</p>
+                  <ul>
+                    <li>Há o concurso de duas ou mais pessoas</li>
+                    <li>A vítima está em serviço de transporte de valores e o agente conhece tal circunstância</li>
+                    <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
+                    <li>O agente mantém a vítima em seu poder, restringindo sua liberdade</li>
+                    <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
+                    <li>A violência ou grave ameaça é exercida com emprego de arma branca ou arma de fogo</li>
+                    <li>Há destruição ou rompimento de obstáculo mediante o emprego de explosivo ou de artefato análogo que cause perigo comum</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                ")   ))
                 
               }
               
@@ -350,7 +365,7 @@
                 )
                 
                 if (is.null(dado10())) {
-                  
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 20)
                   dado10(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/furtoCelular_parcial.csv"))
                   dado10(  dado10() %>%
                              mutate(qtde_celular = ifelse(qtde_celular == "não informado", "-1", qtde_celular),
@@ -363,26 +378,27 @@
                 dado_real(dado10())
                 
                 output$furto_texto <- renderUI({
-                  fluidRow(
+                  box(width = NULL,
+                      fluidPage(
                     
                     HTML("
-              <p>O furto é descrito no artigo 155 do Código Penal, é caracterizado pela subtração de bem material alheio (destacando-se a ausência de ameaça grave ou violência), é agravado se:</p>
-              <ul>
-                <li>O crime é praticado durante o repouso noturno</li>
-                <li>O crime é cometido com destruição ou rompimento de obstáculo à subtração da coisa</li>
-                <li>O crime é cometido com abuso de confiança, ou mediante fraude, escalada ou destreza</li>
-                <li>O crime é cometido com emprego de chave falsa</li>
-                <li>O crime é cometido mediante concurso de duas ou mais pessoas</li>
-                <li>Houver emprego de explosivo ou de artefato análogo que cause perigo comum</li>
-                <li>O furto mediante fraude é cometido por meio de dispositivo eletrônico ou informático, conectado ou não à rede de computadores, com ou sem a violação de mecanismo de segurança ou a utilização de programa malicioso, ou por qualquer outro meio fraudulento análogo</li>
-                <li>O crime é praticado mediante a utilização de servidor mantido fora do território nacional</li>
-                <li>O crime é praticado contra idoso ou vulnerável</li>
-                <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
-                <li>A subtração for de semovente domesticável de produção, ainda que abatido ou dividido em partes no local da subtração</li>
-                <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-            ")
+                  <p>O furto é descrito no artigo 155 do Código Penal, é caracterizado pela subtração de bem material alheio (destacando-se a ausência de ameaça grave ou violência), é agravado se:</p>
+                  <ul>
+                    <li>O crime é praticado durante o repouso noturno</li>
+                    <li>O crime é cometido com destruição ou rompimento de obstáculo à subtração da coisa</li>
+                    <li>O crime é cometido com abuso de confiança, ou mediante fraude, escalada ou destreza</li>
+                    <li>O crime é cometido com emprego de chave falsa</li>
+                    <li>O crime é cometido mediante concurso de duas ou mais pessoas</li>
+                    <li>Houver emprego de explosivo ou de artefato análogo que cause perigo comum</li>
+                    <li>O furto mediante fraude é cometido por meio de dispositivo eletrônico ou informático, conectado ou não à rede de computadores, com ou sem a violação de mecanismo de segurança ou a utilização de programa malicioso, ou por qualquer outro meio fraudulento análogo</li>
+                    <li>O crime é praticado mediante a utilização de servidor mantido fora do território nacional</li>
+                    <li>O crime é praticado contra idoso ou vulnerável</li>
+                    <li>A subtração for de veículo automotor que venha a ser transportado para outro Estado ou para o exterior</li>
+                    <li>A subtração for de semovente domesticável de produção, ainda que abatido ou dividido em partes no local da subtração</li>
+                    <li>A subtração for de substâncias explosivas ou de acessórios que, conjunta ou isoladamente, possibilitem sua fabricação, montagem ou emprego</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
+                "))
                     
                   )
                 })
@@ -395,35 +411,32 @@
                 
                 
                 if (is.null(dado1())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 1)
                   dado1(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/homicidioDoloso_parcial.csv"))
                 }
                 
                 dado_real(dado1())
-                fluidRow(
+                box(width = NULL,
+                    fluidPage(
                   
                   HTML("
-            <p>O homicídio doloso é descrito pelo artigo 121 do Código Penal, além de suas qualificações e alterações de pena. O crime é descrito pelo assassinato intencional de uma pessoa física por outra, constando agravantes tais como:</p>
-            <ul>
-              <li>Motivação fútil</li>
-              <li>Mediante paga ou promessa de recompensa, com emprego de veneno, fogo, explosivo, asfixia, tortura ou outro meio insidioso ou cruel, ou de que possa resultar perigo comum</li>
-              <li>À traição, de emboscada, ou mediante dissimulação ou outro recurso que dificulte ou torne impossível a defesa do ofendido</li>
-              <li>Para assegurar a execução, a ocultação, a impunidade ou vantagem de outro crime</li>
-              <li>Contra a mulher por razões da condição de sexo feminino (feminicídio)</li>
-              <li>Contra autoridade ou agente descrito nos artigos 142 e 144 da Constituição Federal, integrantes do sistema prisional e da Força Nacional de Segurança Pública, no exercício da função ou em decorrência dela, ou contra seu cônjuge, companheiro ou parente consanguíneo até terceiro grau, em razão dessa condição</li>
-              <li>Com emprego de arma de fogo de uso restrito ou proibido</li>
-              <li>Contra menor de 14 anos</li>
-            </ul>
-            <p>A base traz algumas dessas qualificações incluindo feminicídio, trazendo boletins de janeiro de 2003 a dezembro de 2022.</p>
-          ")
+                <p>O homicídio doloso é descrito pelo artigo 121 do Código Penal, além de suas qualificações e alterações de pena. O crime é descrito pelo assassinato intencional de uma pessoa física por outra, constando agravantes tais como:</p>
+                <ul>
+                  <li>Motivação fútil</li>
+                  <li>Mediante paga ou promessa de recompensa, com emprego de veneno, fogo, explosivo, asfixia, tortura ou outro meio insidioso ou cruel, ou de que possa resultar perigo comum</li>
+                  <li>À traição, de emboscada, ou mediante dissimulação ou outro recurso que dificulte ou torne impossível a defesa do ofendido</li>
+                  <li>Para assegurar a execução, a ocultação, a impunidade ou vantagem de outro crime</li>
+                  <li>Contra a mulher por razões da condição de sexo feminino (feminicídio)</li>
+                  <li>Contra autoridade ou agente descrito nos artigos 142 e 144 da Constituição Federal, integrantes do sistema prisional e da Força Nacional de Segurança Pública, no exercício da função ou em decorrência dela, ou contra seu cônjuge, companheiro ou parente consanguíneo até terceiro grau, em razão dessa condição</li>
+                  <li>Com emprego de arma de fogo de uso restrito ou proibido</li>
+                  <li>Contra menor de 14 anos</li>
+                </ul>
+                <p>A base traz algumas dessas qualificações incluindo feminicídio, trazendo boletins de janeiro de 2003 a dezembro de 2022.</p>
+              ")
                   
                 )
                 
-                
-                
-                
-                
-                
-                
+                )
               }
               
               
@@ -433,24 +446,25 @@
                 
                 
                 if (is.null(dado2())) {
+                  showNotification("Carregando os dados. Aguarde!",type = "message",duration = 1)
                   dado2(fread("C:/Users/zabuz/Desktop/Faculdade/Séries Temporais/Dados/feminicidio_parcial.csv"))
                   dado2(dado2() %>% mutate(data_bo_reg = as.Date(datahora_bo_reg)))
                 }
                 
                 dado_real(dado2())
-                
-                fluidRow(
+                box(width = NULL,
+                fluidPage(
                   
                   HTML("
-              <p>O feminicídio, tal qual o homicídio, é descrito pelo artigo 121 do Código Penal, é definido como o assassinato de uma mulher em razão das condições do sexo feminino, de forma que o homicídio torna-se feminicídio quando, em conjunto ao assassinato, há violência doméstica ou familiar e menosprezo ou discriminação à condição da mulher, tendo como agravantes quando o crime é praticado:</p>
-              <ul>
-                <li>Durante a gestação ou nos 3 meses posteriores ao parto</li>
-                <li>Contra pessoa menor de 14 (catorze) anos, maior de 60 (sessenta) anos, com deficiência ou portadora de doenças degenerativas que acarretem condição limitante ou de vulnerabilidade física ou mental</li>
-                <li>Na presença física ou virtual de descendente ou de ascendente da vítima</li>
-                <li>Em descumprimento das medidas protetivas de urgência previstas nos incisos I, II e III do caput do art. 22 da Lei nº 11.340, de 7 de agosto de 2006</li>
-              </ul>
-              <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de abril de 2015 a dezembro de 2022.</p>
-            ")          )
+                  <p>O feminicídio, tal qual o homicídio, é descrito pelo artigo 121 do Código Penal, é definido como o assassinato de uma mulher em razão das condições do sexo feminino, de forma que o homicídio torna-se feminicídio quando, em conjunto ao assassinato, há violência doméstica ou familiar e menosprezo ou discriminação à condição da mulher, tendo como agravantes quando o crime é praticado:</p>
+                  <ul>
+                    <li>Durante a gestação ou nos 3 meses posteriores ao parto</li>
+                    <li>Contra pessoa menor de 14 (catorze) anos, maior de 60 (sessenta) anos, com deficiência ou portadora de doenças degenerativas que acarretem condição limitante ou de vulnerabilidade física ou mental</li>
+                    <li>Na presença física ou virtual de descendente ou de ascendente da vítima</li>
+                    <li>Em descumprimento das medidas protetivas de urgência previstas nos incisos I, II e III do caput do art. 22 da Lei nº 11.340, de 7 de agosto de 2006</li>
+                  </ul>
+                  <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de abril de 2015 a dezembro de 2022.</p>
+                "))          )
                 
                 
                 
@@ -473,15 +487,15 @@
       criarObservador("consulta", estado)
       criarObservador("decomp", estado)
       
-  
+      
       
       criarObservador2("Homicídio", tema)
       criarObservador2("Feminicídio", tema)
       criarObservador2("Latrocínio", tema)
-      criarObservador2("LCSM", tema)
-      criarObservador2("MDIP", tema)
+      criarObservador2("Lesão Corporal Seguida de Morte", tema)
+      criarObservador2("Morte Decorrente de Intervenção Policial", tema)
       criarObservador2("Morte Suspeita", tema)
-      criarObservador2("IML", tema)
+      criarObservador2("IML (Instituto Médico Legal)", tema)
       criarObservador2("Dados Criminais", tema)
       criarObservador2("Roubo de Celular", tema)
       criarObservador2("Furto de Celular", tema)
@@ -491,57 +505,77 @@
       
       
       render_initial_content <- function(){
-        mainPanel(
-          titlePanel("Escolha um tema"),
+        fluidPage(
+          h2("Escolha um tema"),
           br(),
-          div(
-            id = "mostrar_categ",
-            
-            fluidRow(id = "botoes_categorias_1",
-                     column(2,
-                            actionButton("Homicídio", "Homicídio", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Feminicídio", "Feminicídio", class = "custom-button",
-                                         style = "margin-right: 50px;")
-                     ),
-                     column(2,
-                            actionButton("Latrocínio", "Latrocínio", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("LCSM", "LCSM", class = "custom-button")
+          fluidRow(
+            column(width = 3,
+                   box(
+                     title = "Crimes contra a vida",
+                     width = NULL,
+                     div(
+                       tags$ul(
+                         lapply(c("Homicídio", "Feminicídio", "Latrocínio", "Lesão Corporal Seguida de Morte"), function(crime) {
+                           tags$li(actionLink(crime, crime, class = "action-button-scroll"))
+                         })
+                       )
                      )
+                   )
+                   ),
+            column(width = 3,
+                   box(
+                     title = "Crimes contra o patrimonio",
+                     width = NULL,
+                     div(
+                       tags$ul(
+                         lapply(c("Roubo de Celular", "Furto de Celular", "Roubo de Veículo", "Furto de Veículo"), function(crime) {
+                           tags$li(actionLink(crime, crime, class = "action-button-scroll"))
+                         })
+                       )
+                     )
+                   )
+                  ),
+            column(width = 3,
+                   box(
+                     title = "Intervenção Policial",
+                     width = NULL,
+                     div(
+                       tags$ul(
+                         lapply(c("Morte Decorrente de Intervenção Policial"), function(crime) {
+                           tags$li(actionLink(crime, crime, class = "action-button-scroll"))
+                         })
+                       )
+                     )
+                   )
             ),
-            fluidRow(id = "botoes_categorias_2",
-                     column(2,
-                            actionButton("MDIP", "MDIP", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Morte Suspeita", "Morte Suspeita", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("IML", "IML", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Dados Criminais", "Dados Criminais", class = "custom-button")
+            column(width = 3,
+                   box(
+                     title = "Outros",
+                     width = NULL,
+                     div(
+                       tags$ul(
+                         lapply(c("Morte Suspeita", "IML (Instituto Médico Legal)", "Dados Criminais"), function(crime) {
+                           tags$li(actionLink(crime, crime, class = "action-button-scroll"))
+                         })
+                       )
                      )
-            ),
-            fluidRow(id = "botoes_categorias_3",
-                     column(2,
-                            actionButton("Roubo de Celular", "Roubo de Celular", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Furto de Celular", "Furto de Celular", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Roubo de Veículo", "Roubo de Veículo", class = "custom-button")
-                     ),
-                     column(2,
-                            actionButton("Furto de Veículo", "Furto de Veículo", class = "custom-button")
-                     )
-            )),
-          hr())
+                   )
+            )
+          
+        ))
+          
       }
+      
+      observe({
+        shinyjs::runjs('
+          $(".action-button-scroll").click(function() {
+            var target = $(this).parent().next();
+            $("html, body").animate({
+              scrollTop: target.offset().top
+            }, 500);
+          });
+        ')
+      })
       
       output$inicial <- renderUI({
         render_initial_content()
@@ -579,134 +613,145 @@
       output$conteudo <- renderUI({
         conteudo <- switch(estado(),
                            "inicio" = {
-                             
-                             sidebarLayout(
-                               sidebarPanel(
-                                 titlePanel("Painel Interativo de análises"),
-                                 fluidRow(
-                                   column(12,h3("Sobre")),
-                                   column(12, p("O PIA foi desenvolvido com base nos dados fornecidos pela Secretaria de Segurança Pública do Estado de São Paulo ao longo dos anos. Este portal oferece uma variedade de ferramentas que permitem aos usuários realizar análises aoexploratórias, criar visualizações gráficas e espaciais ao longo do tempo, tudo isso com a opção de filtrar ou não os dados conforme necessário.",
-                                   ))),
-                                 hr(), 
-                                 titlePanel("Objetivos"),
-                                 fluidRow(
-                                   column(12, p("Essa plataforma é o resultado do projeto da disciplina de Séries Temporais onde visa tornar acessível a análise de dados, permitino que pessoas de diferentes campos e níveis explorem insights de maneira intuitiva e personalizada. Como resultado a teoria é transportada para a pática.",
-                                   )))
-                               ),
+                             fluidPage(
+                               fluidRow(
+                                 h1("Painel Interativo de Análises (PIA)"),
+                                 br(),
+                                 column(width = 4,
+                                      
+                                        box(title = "Sobre",
+                                                width=NULL,
+                                                solidHeader = TRUE,
+                                                header = tags$div( class = "box-header"),
+                                                "O PIA é o resultado de um projeto em grupo da disciplina de Séries Temporais. 
+                                                Esse painel foi desenvolvido com base nos dados fornecidos pela Secretaria de
+                                                Segurança Pública do Estado de São Paulo ao longo dos anos.")),
+                                 column(width =4,
+                                            box(title = "Objetivos",
+                                                width = NULL,
+                                                "Essa plataforma visa tornar acessível a análise de dados, permitindo que pessoas de diferentes
+                                                campos e níveis explorem os temas de maneira intuitiva e personalizada. Como resultado
+                                                a teoria é transportada para a prática.")),
+                                 column(width = 4,
+                                            box(title = "Ferramentas",
+                                                width = NULL,
+                                                "Aqui você encontra ferramentas que permitem uma análise exploratória por meio de gráficos, visualizações
+                                                espaciais, além de conter todo um aparato relacionado a séries temporais permitindo não só a visualização de diferentes maneiras de uma série temporal como também a criação de modelos de predição "))
+                                            ),
+                                fluidRow(
+                               uiOutput("inicial"),
+                               uiOutput("inicial2"))
+                                 )
                                
-                               uiOutput("inicial")
-                             )
-                             
-                             
-                           },
+                             },
                            
                            "series" = {
                              fluidPage(
-                               h1(tema(), style = "text-align: center;"),
-                               hr(),
                                fluidRow(
                                  column(2,
                                         verticalLayout(
-                                          #h1(tema()),
-                                          
-                                         h3("Opções"),
-                                         
-                                        pickerInput(
-                                          inputId = "cont_filtro",
-                                          label = "Selecione o tempo",
-                                          choices = Lista_Tempo(),
-                                          options = list(
-                                            `actions-box` = TRUE),
-                                          multiple = FALSE 
-                                        ),
-                                        pickerInput(
-                                          inputId = "cont_trans",
-                                          label = "Selecione a transformação da série",
-                                          choices = c("identidade","log","sqrt","inversa","box_cox"),
-                                          options = list(
-                                            `actions-box` = TRUE),
-                                          multiple = FALSE, 
-                                          selected = "total"  
-                                        ),
-                                        hr(),
-                                        h3("Diferenciação"),
-                                        materialSwitch(
-                                          inputId = "Id077",
-                                          label = "Diferenciar", 
-                                          value = FALSE,
-                                          status = "primary"
-                                        ),
-                                        fluidRow(
-                                                 column(6,numericInput("serie_ordem", "Ordem", 1, min = 1, max = 5, step = NA))),
-                                        hr(),
-                                        h3("Diferenciação Sazonal"),
-                                        materialSwitch(
-                                          inputId = "Id078",
-                                          label = "Ativado", 
-                                          value = FALSE,
-                                          status = "primary"
-                                        ),
-                                        fluidRow(column(6,numericInput("serie_ordem2", "Ordem", 1, min = 1, max = 5, step = NA)),
-                                                 column(6,numericInput("serie_lag2", "Lag Sazonal", 1, min = 1, max = 5, step = NA)))
+                                          h1(tema()),
+                                          #top_info(),
                                         
-                                        
-                                        
-                                 )),
-                                column(8,
-                                 tabsetPanel( id = "tabs",
-                                                        tabPanel("Gráfico no Tempo",
-                                                                 plotlyOutput("cont"),
-                                                        ),
-                                                        tabPanel("Gráfico de Sazonalidade",
-                                                                 plotlyOutput("cont2"),
-                                                        ),
-                                                        tabPanel("Gráfico de Defasagens",
-                                                                 plotlyOutput("cont3"),
-                                                        ),
-                                                        tabPanel("Autocorrelação",
-                                                                 value = "autoc",
-                                                                 plotlyOutput("auto1"),
-                                                                 br(),br(),br(),br(),br(),
-                                                                 br(),br(),br(),br(),br(),
-                                                                 br(),br(),br(),br(),br(),
-                                                                 plotlyOutput("auto2")),
+                                          box(width = NULL,
+                                              title= "Opções",
                                               
-                                                        tabPanel("Decomposição",
-                                                                  plotlyOutput("decomp_serie")))),
+                                              pickerInput(
+                                                inputId = "cont_filtro",
+                                                label = "Selecione o tempo",
+                                                choices = Lista_Tempo(),
+                                                options = list(
+                                                  `actions-box` = TRUE),
+                                                multiple = FALSE 
+                                              ),
+                                              pickerInput(
+                                                inputId = "cont_trans",
+                                                label = "Selecione a transformação da série",
+                                                choices = c("identidade","log","sqrt","inversa","box_cox"),
+                                                options = list(
+                                                  `actions-box` = TRUE),
+                                                multiple = FALSE, 
+                                                selected = "total"  
+                                              )),
+                                         
+                                          box(width = NULL,
+                                              title="Diferenciação",
+                                          materialSwitch(
+                                            inputId = "Id077",
+                                            label = "Diferenciar", 
+                                            value = FALSE,
+                                            status = "primary"
+                                          ),
+                                          fluidRow(
+                                            column(6,numericInput("serie_ordem", "Ordem", 1, min = 1, max = 2, step = NA))),
+                                          ),
+                                          box(width = NULL,
+                                              title = "Diferenciação Sazonal",
+                                          materialSwitch(
+                                            inputId = "Id078",
+                                            label = "Diferenciar", 
+                                            value = FALSE,
+                                            status = "primary"
+                                          ),
+                                          fluidRow(column(6,numericInput("serie_ordem2", "Ordem", 1, min = 1, max = 2, step = NA)),
+                                                   column(6,numericInput("serie_lag2", "Lag Sazonal", 1, min = 1, max = 99, step = NA)))
+                                          
+                                          )
+                                          
+                                        )),
+                                 column(8,
+                                        tabBox(width = NULL,
+                                               id = "tabs",
+                                                     tabPanel("Gráfico no Tempo",
+                                                              withSpinner(
+                                                              plotlyOutput("cont",height = "600px"), type = 6),
+                                                     ),
+                                                     tabPanel("Gráfico de Sazonalidade",
+                                                              withSpinner(
+                                                              plotlyOutput("cont2",height = "600px"), type = 6),
+                                                     ),
+                                                     tabPanel("Gráfico de Defasagens",
+                                                              withSpinner(
+                                                              plotlyOutput("cont3",height = "600px"), type =6),
+                                                     ),
+                                                     tabPanel("Autocorrelação",
+                                                              value = "autoc",
+                                                              withSpinner(
+                                                              plotlyOutput("auto1"),type = 6),
+                                                              hr(),
+                                                              withSpinner(
+                                                              plotlyOutput("auto2"),type = 6)),
+                                                     
+                                                     tabPanel("Decomposição",
+                                                              withSpinner(
+                                                              plotlyOutput("decomp_serie",height = "600px"),type = 6)))),
                                  column(2,
                                         verticalLayout(
-                                          fluidRow(column(8,
-                                        h2("Testes")),column(2,br(),actionButton("info_testes",label=NULL,icon=icon("info-sign", lib = "glyphicon")))),
-                                        actionButton("teste1","ADF"),
-                                        actionButton("teste2","KPSS"),
-                                        actionButton("teste3","Cox Stuart"),
-                                        actionButton("teste4","Kendall"),
-                                        actionButton("teste5","Wavk"),
-                                        actionButton("teste6","Sazonal"),
-                                        hr(),
-                                        h2("Modelo"),
-                                        actionButton("gerar_modelo","Criação de Modelos"),
-                                        
-                                        ))),
-                               )
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                           }
-                           ,
+                                          box(width = NULL,
+                                              title = "Testes",
+                                              div(
+                                                tags$ul(
+                                               lapply(c("ADF","KPSS","Cox_Stuart","Kendall","Sazonal"), function(bolinha){
+                                                tags$li(actionLink(bolinha, bolinha))
+                                              })
+                                              ))),
+                                          box(width = NULL,
+                                              title = "Modelo",
+                                              div(tags$ul(
+                                                  tags$li(
+                                          actionLink("gerar_modelo","Criação de Modelos")))))
+                                          
+                                        ))
+                             ))
+                           },
                            
                            "map" = {
                              fluidRow(
-                               leafletOutput("MAPA")
-                               
-                             )
-                             
-                           },
-                           "diference" = {},
+                               box(width = 12,
+                                   withSpinner(
+                               leafletOutput("MAPA"),type = 6)
+                               )
+                             ) },
                            
                            "decomp" = {
                              fluidPage(
@@ -716,18 +761,24 @@
                                         verticalLayout(
                                           h1(tema()),
                                           
-                                          h3("Modelos"),
-                                          
-                                          materialSwitch(
+                                          box(width = NULL,
+                                              title = "Modelos",
+                                               materialSwitch(
                                             inputId = "Modelo_Usuario",
                                             label = "Modelo Usuário", 
                                             value = FALSE,
-                                            status = "primary"
-                                          ),
+                                            status = "primary"),
+                                            h5("Intervalos de busca"),
+                                          fluidRow(column(6,sliderInput("pzin", "p", value = c(0,5), min = 0, max = 5, step = NA,ticks = FALSE)),
+                                                   column(6,sliderInput("pzao", "P", value = c(0,5), min = 0, max = 5, step = NA,ticks = FALSE))),
+                                          fluidRow(column(6,sliderInput("qzin", "q", value = c(0,5), min = 0, max = 5, step = NA,ticks = FALSE)),
+                                                   column(6,sliderInput("qzao", "Q", value = c(0,5), min = 0, max = 5, step = NA,ticks = FALSE))),
+                                          fluidRow(column(6,sliderInput("dzin", "d", value = c(0,2), min = 0, max = 2, step = NA,ticks = FALSE)),
+                                                   column(6,sliderInput("dzao", "D", value = c(0,2), min = 0, max = 2, step = NA,ticks = FALSE))),
                                           
-                                          materialSwitch(
+                                         materialSwitch(
                                             inputId = "Modelo_Ingenuo",
-                                            label = "Modelo Ingênuo", 
+                                            label = "Modelo Pia", 
                                             value = FALSE,
                                             status = "primary"
                                           ),
@@ -738,13 +789,22 @@
                                             value = FALSE,
                                             status = "primary"
                                           ),
-                                          
-                                          
-                                          
-                                          
-                                          actionButton("sugerido","Gerar Modelos"),
-                                          
-                                          pickerInput(
+                                         
+                                         materialSwitch(
+                                           inputId = "Modelo_Arma",
+                                           label = "Modelo Auto Arma", 
+                                           value = FALSE,
+                                           status = "primary"
+                                         ),
+                                         
+                                         materialSwitch(
+                                           inputId = "Modelo_Arima",
+                                           label = "Modelo Auto Arima", 
+                                           value = FALSE,
+                                           status = "primary"
+                                         ),
+                                         actionButton("sugerido","Gerar Modelos"),
+                                         pickerInput(
                                             inputId = "model",
                                             label = "Selecione o modelo",
                                             choices = NULL,
@@ -752,110 +812,124 @@
                                               `actions-box` = TRUE),
                                             multiple = FALSE 
                                           )
-                                          )),
+                                        ))),
                                  column(8,
-                                        tabsetPanel(
+                                        tabBox( width = NULL,
                                           tabPanel("modelos",
-                                                   verbatimTextOutput("summary2")),
+                                                   withSpinner(
+                                                   verbatimTextOutput("summary2"),type = 6)),
                                           
                                           tabPanel("Raízes características",
-                                                   plotOutput("plot1")),
+                                                   withSpinner(
+                                                   plotOutput("plot1", height = "600px"),type = 6)),
                                           
                                           tabPanel("Resíduos",
-                                                   plotOutput("plot2")),
+                                                   withSpinner(
+                                                   plotOutput("plot2", height = "600px"),type = 6)),
                                           
                                           tabPanel("Predição",
-                                                   plotOutput("plot3")),
+                                                   withSpinner(
+                                                   plotOutput("plot3", height = "600px"),type = 6)),
                                           
                                           tabPanel("Summary",
-                                                   verbatimTextOutput("plot4")),
+                                                   withSpinner(
+                                                   verbatimTextOutput("plot4"),type = 6)),
                                           
                                         )),
                                  column(2,
                                         verticalLayout(
-                                          h2("Testes"),
-                                          actionButton("test7","Ljung Box"),
-                                          h2("Relatório"),
-                                          actionButton("teste1","Gerar Relatório")
-                                        ))))
-                                  },
-                           
-                           
-                           
-                           
-                           
+                                          box(width = NULL,
+                                              title ="Predição",
+                                              column(6,
+                                              numericInput("lag_pred","Horizonte", value = 12, min = 0, max = 52))),
+                                          box(width = NULL,
+                                              title = "Testes",
+                                              div(tags$ul(tags$li(actionLink("test7","Ljung Box"))))),
+                                              
+                                          box(width = NULL, title = "Relatório",
+                                              div(tags$ul(tags$li(
+                                              actionLink("teste1","Gerar Relatório")))))
+                                        ))
+                                 
+                                 
+                                 ))
+                                },
+                          
                            "consulta" = {
                              fluidPage(
                                
                                fluidRow(
-                                 column(2,
+                                 column(3,
                                         verticalLayout(
-                                          h1(tema()),
+                                          top_info(),
                                           hr(),
-                                             Side1() )),
-                                 
-                                 column(8,
-                                   tabsetPanel(
-                                     
-                                     tabPanel("Informações gerais",
-                                              fluidRow(
-                                                plotlyOutput("serie_ano"),
-                                                column(6,tableOutput("tabela1")),
-                                                column(6,tableOutput("tabela2")))),
-                                     
-                                     tabPanel("Gráficos",
-                                              plotlyOutput("graficos")),
-                                     
-                                     tabPanel("Tabela",
-                                              DTOutput("tabela_1")))),
-                                 column(2,
-                                        tabsetPanel(
-                                          tabPanel(
-                                          'Gráficos',
-                                          fluidRow(
-                                            br(),
-                                            pickerInput(
-                                              inputId = "Var1",
-                                              label = "Selecione a Variável 1:",
-                                              choices = setdiff(colnames(dado_real()),vetor),
-                                              options = list(
-                                                `actions-box` = TRUE),
-                                              selected = "cor_pele_pessoa"
-                                              
+                                          box(
+                                          width = NULL,
+                                          tabsetPanel(width = NULL,
+                                            tabPanel(
+                                              'Gráficos',
+                                              fluidPage(
+                                                br(),
+                                                pickerInput(
+                                                  inputId = "Var1",
+                                                  label = "Selecione a Variável 1:",
+                                                  choices = setdiff(colnames(dado_real()),vetor),
+                                                  options = list(
+                                                    `actions-box` = TRUE),
+                                                  selected = "cor_pele_pessoa"
+                                                  
+                                                ),
+                                                pickerInput(
+                                                  inputId = "Var2",
+                                                  label = "Selecione a Variável 2:",
+                                                  choices = c("Nenhuma",setdiff(colnames(dado_real()),vetor)),
+                                                  options = list(
+                                                    `actions-box` = TRUE)
+                                                  
+                                                )
+                                                
+                                              )  
                                             ),
-                                            pickerInput(
-                                              inputId = "Var2",
-                                              label = "Selecione a Variável 2:",
-                                              choices = c("Nenhuma",setdiff(colnames(dado_real()),vetor)),
-                                              options = list(
-                                                `actions-box` = TRUE)
-                                              
-                                            )
+                                            tabPanel("Tabela",
+                                                     fluidPage(
+                                                       pickerInput(
+                                                         inputId = "colunas_selecionadas",
+                                                         label = "Selecione as colunas:",
+                                                         choices = colnames(dado_real()),
+                                                         options = list(
+                                                           `actions-box` = TRUE),
+                                                         multiple = TRUE, 
+                                                         selected = colnames(dado_real())  
+                                                       ),
+                                                       
+                                                       downloadButton("download_full","Download tema.csv"),
+                                                       
+                                                       
+                                                       downloadButton("download_filtrado","Download tema_filtrado.csv")
+                                                       
+                                                     )  )
                                             
-                                          )  
-                                        ),
-                                        tabPanel("Tabela",
-                                                 fluidRow(
-                                                   pickerInput(
-                                                     inputId = "colunas_selecionadas",
-                                                     label = "Selecione as colunas:",
-                                                     choices = colnames(dado_real()),
-                                                     options = list(
-                                                       `actions-box` = TRUE),
-                                                     multiple = TRUE, 
-                                                     selected = colnames(dado_real())  
-                                                   ),
-                                                   
-                                                          downloadButton("download_full","Download tema.csv"),
-                                                   
-                                                   
-                                                          downloadButton("download_filtrado","Download tema_filtrado.csv")
-                                                   
-                                                 )  )
-                                        
+                                          )
+                                        ))),
+                                 
+                                 column(9,
+                                        tabBox(id = "tab_consulta",
+                                               width = NULL,
+                                               tabPanel("Gráficos",
+                                                        withSpinner(
+                                                        plotlyOutput("graficos", height = "600px"),type = 6)
+                                                        
+                                                        ),
+                                               tabPanel("Tabela",
+                                                        withSpinner(
+                                                        DTOutput("tabela_1"), type = 6))
                                         )
-                                        )
-                                     ))
+                                 )
+                                 
+                                 
+                                 
+                                 ),
+                                 )
                              
                            },
                            "exp" = {
@@ -865,14 +939,27 @@
                              
                            },
                            fluidRow(
-                             column(12, h2("Conteúdo da página Padrão")),
-                             column(12, p("Este é o conteúdo da página Padrão."))
+                             column(12, h1("Integrantes do projeto")),
+                             fluidRow(
+                               column(2,box(width = NULL, title = "Integrante 1")),
+                               column(2,box(width = NULL, title = "Integrante 2")),
+                               column(2,box(width = NULL, title = "Integrante 3")),
+                               column(2,box(width = NULL, title = "Integrante 4")),
+                               column(2,box(width = NULL, title = "Integrante 5")),
+                             ))
                            )
-        )
+        
         
         return(conteudo)
       })
       
+      top_info <- reactive({
+        fluidPage(
+        h1(tema()),
+        box(id="filtro_box",width = NULL,title = "Filtro dos dados", collapsible = TRUE,
+            header = tags$div( class = "box-header"),
+            collapsed = TRUE, Side1()))
+      })
       observeEvent(input$toggle_sidebar, {
         if (shinyjs::hasClass("sidebarPanelId", "collapsed")) {
           shinyjs::removeClass("sidebarPanelId", "collapsed")
@@ -882,27 +969,23 @@
       })
       
       
+      modal_state <- reactiveVal(FALSE)
+      
       observeEvent(input$consulta, {
-        modalContent <- modalDialog(
+        
+        shinyalert(
           title = "Aviso!",
-          "Modificações dos dados serão propagados para todas as análises.
-                  Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
-          footer = tagList(
-            actionButton("close_popup", "Fechar")
-          )
-        )
+          text = "Modificações dos dados serão propagados para todas as análises.
+          Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
+          type = "info",
+          confirmButtonCol = "#11104d")
         
-        # Mostra o modal dialog
-        showModal(modalContent)
-        
-        # Adiciona reação ao botão de fechar
-        observeEvent(input$close_popup, {
-          removeModal()
-        }
-        )
-        
-        
-        
+      })
+      
+
+      observeEvent(input$close_popup, {
+        removeModal()
+        modal_state(FALSE)
       })
       
       
@@ -940,25 +1023,25 @@
           filtro <- TRUE
           
           if (!is.null(data)) {
-            filtro <- filtro & (dado_real()$data_ocorr >= data[1] & dado_real()$data_ocorr <= data[2])
+            filtro <- filtro & (dado_real()$data_bo_reg >= data[1] & dado_real()$data_bo_reg <= data[2])
           }
           
-          if(tema()== "Homicídio" | tema()=="Feminicídio" | tema()=="Latrocínio" | tema()=="LCSM" | tema()=="MDIP"){
+          if(tema()== "Homicídio" | tema()=="Feminicídio" | tema()=="Latrocínio" | tema()=="Lesão Corporal Seguida de Morte" | tema()=="Morte Decorrente de Intervenção Policial"){
             if (!is.null(cor)) {
               filtro <- filtro & (dado_real()$cor_pele %in% cor)
             }}
           
-          if(tema()== "Homicídio" | tema()=="Feminicídio" | tema()=="Latrocínio" | tema()=="LCSM" | tema()=="MDIP" | tema()=="Morte Suspeita"){
+          if(tema()== "Homicídio" | tema()=="Feminicídio" | tema()=="Latrocínio" | tema()=="Lesão Corporal Seguida de Morte" | tema()=="Morte Decorrente de Intervenção Policial" | tema()=="Morte Suspeita"){
             if (!is.null(faixa_etaria)) {
               filtro <- filtro & (dado_real()$idade_pessoa >= faixa_etaria[1] & dado_real()$idade_pessoa <= faixa_etaria[2])
             }}
           
-          if (tema()== "Homicídio"| tema()== "Latrocínio" | tema()== "LCSM" | tema()=="MDIP" ) {
+          if (tema()== "Homicídio"| tema()== "Latrocínio" | tema()== "Lesão Corporal Seguida de Morte" | tema()=="Morte Decorrente de Intervenção Policial" ) {
             if (!is.null(sexo)) {
               filtro <- filtro & (dado_real()$sexo_pessoa %in% sexo)
             }}
           
-          if(tema()== "MDIP"){
+          if(tema()== "Morte Decorrente de Intervenção Policial"){
             if (!is.null(corp)) {
               filtro <- filtro & (dado_real()$coorp_situacao_ocorr %in% corp)
             }}
@@ -1012,13 +1095,14 @@
       observeEvent(input$reset,{
         
         dado_filtrado(dado_real())
-        shinyjs::enable("map")
-        shinyjs::enable("series")
+   
       })
       
       output$graficos <- renderPlotly({
         var1 <- input$Var1
         var2 <- input$Var2
+        dic_var1 <- dicionario[var1]
+        dic_var2 <- dicionario[var2]
         Graph <- NULL
         if (var2 == "Nenhuma"){
           if (class(dado_filtrado()[[var1]]) == "character"){
@@ -1032,14 +1116,22 @@
               geom_text(aes(label = contagem), vjust = -0.5) +
               labs(title = "Contagem de Categorias (Top 10)", x = "Contagem", y = "Categoria")
             
-            return(Graph)
+            Graph <- ggplotly(Graph) %>% layout(height = 600)
+           
+            
+            
             
           } else{
             Graph <- ggplot(dado_filtrado(), aes(x = !!sym(var1))) +
               geom_histogram(fill = "skyblue", color = "black", bins = 10, alpha = 0.7) +
               geom_density(color = "red") +
               labs(title = "Distribuição da Variável Contínua", x = "Valor", y = "Frequência")
+            Graph <- ggplotly(Graph)
+          
+            Graph <- Graph %>% layout(height = 600)
+            
             return(Graph)
+            
           }
           
         } else{
@@ -1061,17 +1153,19 @@
               
               Graph <- ggplot(result, aes(y = !!sym(var1), fill = !!sym(var2))) +
                 geom_bar(position = "dodge", stat = "count", width = 0.7) +
-                labs(title = "Contagem de Combinações de Cor de Pele e Profissão",
-                     x = "Cor de Pele",
-                     y = "Contagem",
-                     fill = "Profissão") +
+                labs(title = paste0("Contagem de Combinações de ",dic_var1," e ",dic_var2),
+                     x = "Contagem",
+                     y = dic_var1,
+                     fill = dic_var2) +
                 theme_minimal()
               
               Graph <- ggplotly(Graph)
-              Graph <- Graph %>% layout(width = 800, height = 600)
-              
+        
+              Graph <- Graph %>% layout(height = 600)
               
               return(Graph)
+              
+              
               
             }
             else{
@@ -1091,8 +1185,11 @@
                 theme_minimal()
               
               Graph <- ggplotly(Graph)
-              Graph <- Graph %>% layout(width = 800, height = 600)
+              
+              Graph <- Graph %>% layout(height = 600)
+              
               return(Graph)
+              
               
             }
           }else{
@@ -1113,25 +1210,26 @@
                 theme_minimal()
               
               Graph <- ggplotly(Graph)
-              Graph <- Graph %>% layout(width = 800, height = 600)
+         
+              Graph <- Graph %>% layout(height = 600)
+              
               return(Graph)
               
             }else{
-              Graph <- ggplot(dado_filtado(), aes(x = !!sym(var1), y = !!sym(var2))) +
+              Graph <- ggplot(dado_filtrado(), aes(x = !!sym(var1), y = !!sym(var2))) +
                 geom_point() +
                 labs(title = "Scatter Plot entre Duas Variáveis Contínuas",
                      x = "Variável Contínua 1",
                      y = "Variável Contínua 2") +
                 theme_minimal()
               Graph <- ggplotly(Graph)
-              Graph <- Graph %>% layout(width = 800, height = 600)
+              Graph <- Graph %>% layout(height = 600)
+              
               return(Graph)
+              
             }
             
-            
-            
-            
-            
+          
           }
           
         }})
@@ -1166,10 +1264,14 @@
       
       observeEvent(input$map, {
         output$MAPA <- renderLeaflet({
-          df2 <- dado_real()
+          df2 <- dado_filtrado()
           df2$longitude_ocorr <- as.numeric(df2$longitude_ocorr)
           df2$latitude_ocorr <- as.numeric(df2$latitude_ocorr)
+          
+          df2$longitude_ocorr <- ifelse(abs(df2$longitude_ocorr) > 180, NA, df2$longitude_ocorr)
+          df2$latitude_ocorr <- ifelse(abs(df2$latitude_ocorr) > 90, NA, df2$latitude_ocorr)
           df2 <- na.omit(df2)
+          
           
           nocorr <- nrow(df2)  # Conta o número de ocorrências após limpar os dados
           
@@ -1297,11 +1399,11 @@
             
           } else if (tempo == "mensal") {
             armazem_granularidade("mes")
-           
+            
             
           } else if (tempo == "trimestral") {
             armazem_granularidade("tri")
-           
+            
             
           } else if (tempo == "semestral") {
             armazem_granularidade("sem")
@@ -1328,7 +1430,7 @@
         }
       })
       
-    
+      
       
       observeEvent(input$serie_ordem,{
         if (!is.null(input$serie_ordem)){
@@ -1353,10 +1455,13 @@
           armazem_ordem2(input$serie_ordem)
         }
       })
-  ################################################################################################      
-        Serie_Atual <- reactive({
-         if(!is.null(Serie_Tempo()) && !is.null(Serie_Transformacao())){
+      ################################################################################################      
+      Serie_Atual <- reactive({
+        if(!is.null(Serie_Tempo()) && !is.null(Serie_Transformacao())){
           serie <- dados_filtrados_tempo(dado_filtrado(),Serie_Tempo())
+          if(nrow(serie) <=1){
+            shinyalert("Poucas observações",text ="Dados insuficientes para a construção da série temporal com esse período de tempo")
+          }else{
           armazem_serie_original(serie)
           serie <- get_transformacoes(serie,Serie_Transformacao())
           
@@ -1365,22 +1470,22 @@
             lag <- 1
             ordem <- input$serie_ordem
             
-            serie <- diff(serie,lag,ordem)
+            serie <- diff(serie,lag,ordem)}
             
-           if(input$Id078 == TRUE){
-             
-             lag2 <- input$serie_lag2
-             ordem2 <- input$serie_ordem2
-             
-             serie <- diff(serie,lag2,ordem2)
-           }
-          }
-        
-        
-        serie
-         }
+          if(input$Id078 == TRUE){
+              
+              lag2 <- input$serie_lag2
+              ordem2 <- input$serie_ordem2
+              
+              serie <- diff(serie,lag2,ordem2)
+            }
+          
+          
+          
+          serie
+        }}
       })
-  
+      
       
       
       output$cont <- renderPlotly({
@@ -1389,12 +1494,12 @@
         Graph <- autoplot(Serie_Atual(), .vars = !!sym(colnames(Serie_Atual())[2]) ) +
           theme_pubclean() +
           xlab(Graph_Tempo()) +
-          ggtitle(paste('Número de ocorrências por ', Graph_Tempo())) +
+          ggtitle(paste('Número de ocorrências registradas por ', Graph_Tempo())) +
           theme(plot.title = element_text(hjust = 0.5))
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        plotly_chart <- plotly_chart %>% layout(height = 600)
         
         plotly_chart
         
@@ -1404,12 +1509,12 @@
       output$cont2 <- renderPlotly({
         
         Graph <- NULL
-      
+        
         Graph <- Serie_Atual() %>% gg_season(y = !!sym(colnames(Serie_Atual())[2]), labels = "none") + xlab(paste(Graph_Tempo())) + theme_pubclean()
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        plotly_chart <- plotly_chart %>% layout(height = 600)
         
         plotly_chart
       })
@@ -1421,12 +1526,12 @@
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        #plotly_chart <- plotly_chart %>% layout(height = 700)
         
         plotly_chart
       })
       
-  
+      
       output$auto1 <- renderPlotly({
         Graph <- NULL
         serie <- Serie_Atual()
@@ -1434,12 +1539,12 @@
         Graph <- autoplot(serie %>% ACF()) +
           theme_pubclean() +
           xlab(Graph_Tempo()) +
-          ggtitle(paste('Autocorrelação -- Defasagem:', Graph_Tempo())) +
+          ggtitle(paste("Autocorrelação")) +
           theme(plot.title = element_text(hjust = 0.5))
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        #plotly_chart <- plotly_chart %>% layout(height = 600)
         
         plotly_chart 
         
@@ -1452,12 +1557,12 @@
         Graph <- autoplot(serie %>% PACF()) +
           theme_pubclean() +
           xlab(Graph_Tempo()) +
-          ggtitle(paste('Autocorrelação Parcial -- Defasagem:', Graph_Tempo())) +
+          ggtitle(paste("Autocorrelação")) +
           theme(plot.title = element_text(hjust = 0.5))
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        #plotly_chart <- plotly_chart %>% layout(height = 600)
         
         plotly_chart 
         
@@ -1486,18 +1591,47 @@
         
         plotly_chart <- ggplotly(Graph)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        plotly_chart <- plotly_chart %>% layout(height = 600)
         
         plotly_chart
       })
       
-  
       
-  
+      observeEvent(input$test7,{
+        if (is.null(fit())){
+          showNotification("Nenhum modelo gerado",type = "error")
+        }else if(fit() == 123){
+          showNotification("Nenhum modelo gerado",type = "error")
+        }
+        else{
+        fit <- fit()
+        
+        resultado_summary <- teste_ljung_box(fit,input$model)
+        
+        texto_summary <- capture.output(print(resultado_summary))
+        
+        modalContent <- modalDialog(
+          title = "Teste Ljung Box",
+          verbatimTextOutput("summary_output"),  # Exibindo o texto do summary
+          footer = tagList(
+            actionButton("close_popup", "Fechar")
+          )
+        )
+        
+        
+        output$summary_output <- renderPrint({
+          cat(texto_summary, sep = "\n")
+        })
+        
+        showModal(modalContent)
+        
+        modal_state(TRUE)}
+      })
       
       
       
-      observeEvent(input$teste1,{
+      
+      observeEvent(input$ADF,{
         serie <- Serie_Atual()
         
         resultado_summary <- teste_adf(serie,colnames(serie[2]))
@@ -1519,12 +1653,10 @@
         
         showModal(modalContent)
         
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
+        modal_state(TRUE)
       })
       
-      observeEvent(input$teste6,{
+      observeEvent(input$Sazonal,{
         serie <- Serie_Atual()
         
         resultado_summary <- teste_seasonal(serie,colnames(serie[2]))
@@ -1546,12 +1678,10 @@
         
         showModal(modalContent)
         
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
+        modal_state(TRUE)
       })
       
-      observeEvent(input$teste4,{
+      observeEvent(input$Kendall,{
         serie <- Serie_Atual()
         
         resultado_summary <- teste_kendall(serie,colnames(serie[2]))
@@ -1565,7 +1695,7 @@
             actionButton("close_popup", "Fechar")
           )
         )
-          
+        
         # Definindo o output no modal
         output$summary_output <- renderPrint({
           cat(texto_summary, sep = "\n")
@@ -1573,12 +1703,10 @@
         
         showModal(modalContent)
         
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
+        modal_state(TRUE)
       })
       
-      observeEvent(input$teste3,{
+      observeEvent(input$Cox_Stuart,{
         serie <- Serie_Atual()
         
         resultado_summary <- teste_cox_stuart(serie,colnames(serie[2]))
@@ -1600,22 +1728,20 @@
         
         showModal(modalContent)
         
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
+        modal_state(TRUE)
       })
       
       
-      observeEvent(input$teste2,{
+      observeEvent(input$KPSS,{
         serie <- Serie_Atual()
         
         kpss1 <- teste_kpss(serie, !!sym(colnames(serie)[2]))
-        kpss2 <- teste_kpss_numero_diff(serie, !!sym(colnames(serie)[2]))
-        kpss3 <- teste_kpss_season_diff(serie, !!sym(colnames(serie)[2]))
+        #kpss2 <- teste_kpss_numero_diff(serie, !!sym(colnames(serie)[2]))
+        #kpss3 <- teste_kpss_season_diff(serie, !!sym(colnames(serie)[2]))
         
         texto_summary  <- capture.output(print(kpss1))
-        texto_summary2 <- capture.output(print(kpss2))
-        texto_summary3 <- capture.output(print(kpss3))
+        #texto_summary2 <- capture.output(print(kpss2))
+        #texto_summary3 <- capture.output(print(kpss3))
         
         modalContent <- modalDialog(
           title = "Teste ADF",
@@ -1628,49 +1754,18 @@
         # Definindo o output no modal
         output$summary_output <- renderPrint({
           cat(texto_summary, sep = "\n")
-          cat(texto_summary2, sep = "\n")
-          cat(texto_summary3, sep = "\n")
+          #cat(texto_summary2, sep = "\n")
+          #cat(texto_summary3, sep = "\n")
         })
         
         showModal(modalContent)
         
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
+        modal_state(TRUE)
       })
-      
-      
-      observeEvent(input$teste7,{
-        teste7 <- teste_ljung_box(fit(),input$model)
-        
-        
-        
-        texto_summary <- capture.output(print(teste7))
-        
-        modalContent <- modalDialog(
-          title = "Teste Ljung Box",
-          verbatimTextOutput("summary_output"),  # Exibindo o texto do summary
-          footer = tagList(
-            actionButton("close_popup", "Fechar")
-          )
-        )
-        
-        # Definindo o output no modal
-        output$summary_output <- renderPrint({
-          cat(texto_summary, sep = "\n")
-        })
-        
-        showModal(modalContent)
-        
-        observeEvent(input$close_popup, {
-          removeModal()
-        })
-      })
-      
       
       output$decomp_serie <- renderPlotly({
         Graph <- NULL
-  
+        
         
         k <- Serie_Atual()
         
@@ -1685,72 +1780,123 @@
         
         plotly_chart <- ggplotly(grafico)
         
-        plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
+        #plotly_chart <- plotly_chart %>% layout(width = 800, height = 600)
         
         plotly_chart
       })
-   
       
       
-   
-    
+      
+      
+      
       observeEvent(input$sugerido,{ 
-        SERIE <- armazem_serie_original()
-        colnames(SERIE)[2] <- "total"
-        fit(fit_serie(SERIE,tipo_transformacao = armazem_transformacao(),
-                      modelo_usuario = input$Modelo_Usuario ,
-                      modelo_ingenuo = input$Modelo_Ingenuo,
-                      modelo_auto = input$Modelo_Sarima))
+        showNotification("Geração de modelos iniciada",type = "warning")
         
-        updatePickerInput(session,"model",choices=list("usuario","ingenuo","AUTO_sarima"))
+        SERIE <- armazem_serie_original()
+        
+        vetor2 <- c()
+        
+        modelo_usuario <- input$Modelo_Usuario
+        
+        modelo_ingenuo <- input$Modelo_Ingenuo
+        
+        modelo_sarima <- input$Modelo_Sarima
+        
+        modelo_arma <- input$Modelo_Arma
+        
+        modelo_arima <- input$Modelo_Arima
+        
+        if (modelo_usuario){
+          vetor2 <- append(vetor2,"usuario")
+        }
+        
+        if (modelo_ingenuo){
+          vetor2 <- append(vetor2,"modelo_pia")
+        }
+        
+        if (modelo_sarima){
+          vetor2 <- append(vetor2,"auto_sarima")
+        }
+        
+        if (modelo_arma){
+          vetor2 <- append(vetor2,"arma")
+        }
+        
+        if (modelo_arima){
+          vetor2 <- append(vetor2,"arima")
+        }
+        
+        fit(fit_serie(SERIE,tipo_transformacao = armazem_transformacao(),d = input$serie_ordem,
+            dif = paste0(input$dzin[1],":",input$dzin[2]),  seasonal_dif = paste0(input$dzao[1],":",input$dzao[2]),
+            p = paste0(input$pzin[1],":",input$pzin[2]), P = paste0(input$pzao[1],":",input$pzao[2]),
+            q = paste0(input$qzin[1],":",input$qzin[2]), Q = paste0(input$qzao[1],":",input$qzao[2]),
+            lag_seasonal_dif = armazem_lag2(),modelos = vetor2))
+        if (fit() == 123){
+          shinyalert(title = "Interrupção",text = "Verifique se a série é ruído branco!")
+          showNotification("Geração de modelos interrompida",type = "message")
+        }else{
+      
+        updatePickerInput(session,"model",choices = vetor2)
+        
+        showNotification("Geração de modelos finalizada",type = "message")}
       })
       
       
       output$summary2 <- renderPrint({
         if (is.null(fit())){
           "Nenhum modelo gerado!"
+        }else if(fit() == 123){
+          h3("Nenhum modelo gerado!")
         }else{
           fit()
         }
       })
-     
+      
       
       output$plot1 <- renderPlot({
-        if (is.null(fit())){
+        if (is.null(fit()) ){
+          h3("Nenhum modelo gerado!")
+        }else if(fit() == 123){
           h3("Nenhum modelo gerado!")
         }else{
-        plot_raiz <- plot_raiz(fit(),input$model)
-        
-        plot_raiz
+          plot_raiz <- plot_raiz(fit(),input$model)
+          
+          plot_raiz
         }
       })
       
       output$plot2 <- renderPlot({
         if (is.null(fit())){
           print("Nenhum modelo gerado!")
+        }else if(fit() == 123){
+          h3("Nenhum modelo gerado!")
         }else{
-        plot_res <- plot_res(fit(),input$model)
-        
-        plot_res}
+          plot_res <- plot_res(fit(),input$model)
+          
+          plot_res}
       })
       
       output$plot3 <- renderPlot({
         if (is.null(fit())){
           "Nenhum modelo gerado!"
+        }else if(fit() == 123){
+          h3("Nenhum modelo gerado!")
         }else{
-        serie <- armazem_serie_original()
-        plot_pred <- plot_predicao(fit(),input$model,12,serie)
-        
-        plot_pred}
+          serie <- armazem_serie_original()
+          plot_pred <- plot_predicao(fit(),input$model,input$lag_pred,serie)
+          
+          plot_pred}
       })
       
       output$plot4 <- renderPrint({
         if (is.null(fit())){
           "Nenhum modelo gerado!"
+        }else if(fit() == 123){
+          h3("Nenhum modelo gerado!")
         }else{
-        plot_report <-  plot_report(fit(),input$model) 
-        
-        plot_report
+          plot_report <-  plot_report(fit(),input$model) 
+          
+          plot_report
         }
       })
       
@@ -1761,67 +1907,55 @@
             kk <- teste_kpss(serie,!!sym(colnames(serie)[2]))
             j <- round(kk[2],3)
             if (j < 0.05){
-              modalContent <- modalDialog(
+              shinyalert(
                 title = "A série possivelmente não é estacionária!",
-                "Não tire conclusões acerca da ordem de um modelo preditivo.",
-                footer = tagList(
-                  actionButton("close_popup", "Fechar")
-                )
-              )
+                text = "Não tire conclusões acerca da ordem de um modelo preditivo.",
+                type = "warning",
+                confirmButtonCol = "#11104d")
               
-              # Mostra o modal dialog
-              showModal(modalContent)
-              
-              # Adiciona reação ao botão de fechar
-              observeEvent(input$close_popup, {
-                removeModal()
-              })
               
             } } })
       }
       
-      
-      
-      observeEvent(input$tabs, {
-        if (!is.null(input$tabs) && input$tabs == "autoc") {
-            serie<-Serie_Atual()
-            kk <- teste_kpss(serie,!!sym(colnames(serie)[2]))
-            j <- round(kk[2],3)
-            if (j < 0.05){
-              modalContent <- modalDialog(
-                title = "A série possivelmente não é estacionária!",
-                "Não tire conclusões acerca da ordem de um modelo preditivo.",
-                footer = tagList(
-                  actionButton("close_popup", "Fechar")
-                )
-              )
-              
-              # Mostra o modal dialog
-              showModal(modalContent)
-              
-              # Adiciona reação ao botão de fechar
-              observeEvent(input$close_popup, {
-                removeModal()
-              })
-              
-            } } })
-    
-      
+      previous_serie <- reactiveVal(NULL)
+      observe({
+        if (input$tabs == "autoc" && !identical(Serie_Atual(), previous_serie())) {
+          serie <- Serie_Atual()
+          kk <- teste_kpss(serie, !!sym(colnames(serie)[2]))
+          j <- round(kk[2], 3)
+          if (j < 0.05) {
+            shinyalert(
+              title = "A série possivelmente não é estacionária!",
+              text = "Não tire conclusões acerca da ordem de um modelo preditivo.",
+              type = "warning",
+              confirmButtonCol = "#11104d"
+            )
+          }
+          # Atualiza o objeto reativo anterior
+          previous_serie(Serie_Atual())
+        }
+      })
       
       
       observeEvent(input$gerar_modelo,{
         shinyjs::enable("decomp")
-        
+        showNotification("Algumas informações foram conservadas", duration = 3)
+        if (armazem_diff1()){
+          updateSliderInput(session, "dzin", value = c(armazem_ordem1(),armazem_ordem1()))}
+        if (armazem_diff2()){
+          updateSliderInput(session, "dzao", value = c(armazem_ordem2(),arnazen_ordem2()))}
         estado("decomp")
-        
+        shinyalert(title = "Processamento",type = "warning",
+                   text = "Dependendo dos parâmetros escolhidos a busca do melhor modelo 
+                   pode ser custosa computacionalmente resultando em um tempo de execução maior",
+                   confirmButtonCol = "#11104d"
+        )
       })
       
-      
-      
-      addTooltip(session=session,id="ADF",title="Hello! This is a hover pop-up. You'll have to click to see the next one.")
-      
-      
-      
+      observeEvent(input$Modelo_Ingenuo,{
+        showNotification("Esse modelo só é recomendado para séries estacionárias",type = "message")
+  
+      }) 
       
       
       
