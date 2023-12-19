@@ -14,8 +14,6 @@ get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
 }
 
 
-
-
 dados_filtrados_tempo <- function(dados, granularidade = "ano") {
   data <- dados %>% 
     filter(data_bo_reg != -1) %>% 
@@ -23,32 +21,50 @@ dados_filtrados_tempo <- function(dados, granularidade = "ano") {
     filter(year(data_bo_reg) >= 2003) %>% 
     filter(year(data_bo_reg) <= 2022)
   
-  index_col <- switch(granularidade,
-                      "ano" = year(data$data_bo_reg),
-                      "sem" = yearhalf(data$data_bo_reg),
-                      "tri" = yearquarter(data$data_bo_reg),
-                      "mes" = yearmonth(data$data_bo_reg),
-                      "semana" = yearweek(data$data_bo_reg)
-  )
-  
-  data %>% 
-    select(data_bo_reg) %>% 
-    mutate(granularidade = index_col) %>% 
-    group_by(granularidade) %>% 
-    summarise(total = n()) %>% 
-    as_tsibble(index = granularidade)
-  
-  
+  if(granularidade == "sem"){
+    semestre_data = data %>%  select(data_bo_reg) %>% map( ~ semester(.x, with_year  = TRUE)) %>% unlist() %>% yearmon() %>% yearmonth()
+    serie_semestre <- data %>% mutate(granularidade = semestre_data) %>%  group_by(granularidade)%>% summarise( total = n())
+    
+    invervalo_semestre = new_interval(month = 6)
+    
+    
+    serie <-
+      serie_semestre %>%
+      build_tsibble(
+        index = granularidade,
+        interval = invervalo_semestre
+      ) 
+    
+    
+    
+  }else{
+    index_col <- switch(granularidade,
+                        "ano" = year(data$data_bo_reg),
+                        "tri" = yearquarter(data$data_bo_reg),
+                        "mes" = yearmonth(data$data_bo_reg),
+                        "semana" = yearweek(data$data_bo_reg)
+    )
+    
+    serie <- data %>% 
+      select(data_bo_reg) %>% 
+      mutate(granularidade = index_col) %>% 
+      group_by(granularidade) %>% 
+      summarise(total = n()) %>% 
+      as_tsibble(index = granularidade)
+  }
+  return(serie)
 }
+
+
 
 
 ########################
 
 get_transformacoes <- function(series_temporal, var = "total") {
-  
+  if(var == "box_cox"){
   lambda <- series_temporal %>% 
     features(total, features = guerrero)  %>% 
-    pull(lambda_guerrero)
+    pull(lambda_guerrero)}
   
   series_temporal <- series_temporal %>%
     mutate(log = if (var == "log") log(total) else NULL,
@@ -60,7 +76,6 @@ get_transformacoes <- function(series_temporal, var = "total") {
   
   return(series_temporal)
 }
-
 
 
 
@@ -206,31 +221,46 @@ get_acf_sig <- function(serie_temporal, ci  = 0.95,var){
 
 
 plot_raiz <- function(fit,modelo){
-  plot  = fit %>% select({{modelo}}) %>% gg_arma() + theme_pubclean() + ggtitle(glue('{modelo}')) + theme(plot.title = element_text(hjust = 0.5))
+  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_arma() + theme_pubclean() + ggtitle(glue('{modelo}')) + theme(plot.title = element_text(hjust = 0.5))
   return(plot)
   
 }
-
 
 
 
 plot_res <- function(fit,modelo){
-  plot  = fit %>% select({{modelo}}) %>% gg_tsresiduals() + ggtitle(glue('{modelo}'))
+  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_tsresiduals() + ggtitle(glue('{modelo}'))
   return(plot)
   
   
 }
 
 
+
 plot_predicao <- function(fit,modelo,h,serie){
-  fit %>% select({{modelo}}) %>% forecast::forecast(h = {{h}}) %>% autoplot(serie)
+  fit %>% select({{modelo}}) %>%  pull() %>% forecast::forecast(h = {{h}}) %>% autoplot(serie) +  theme_pubclean()
 }
+
 
 
 plot_report <- function(fit,modelo){
-  fit %>% select({{modelo}}) %>% report() 
+  fit %>% select({{modelo}}) %>% pull() %>% report() 
 }
 
+
+teste_ljung_box <- function(objeto_fit,modelo){
+  modelo_selecionado <- objeto_fit %>% select({{modelo}}) %>% pull() %>% pull()
+  p = modelo_selecionado[[1]]$fit$spec$p
+  q = modelo_selecionado[[1]]$fit$spec$q
+  P = modelo_selecionado[[1]]$fit$spec$P
+  Q = modelo_selecionado[[1]]$fit$spec$Q
+  freq = modelo_selecionado[[1]]$fit$spec$period
+  df = p +q + P + Q
+  objeto_fit %>% select({{modelo}}) %>% pull() %>% augment() %>% features(.innov, ljung_box, lag = 2*freq, dof = df)
+  
+  
+  
+}
 
 
 
@@ -238,48 +268,81 @@ plot_report <- function(fit,modelo){
 
 
 
-get_pqd <- function(serie_temporal, ci  = 0.95){
-  var = colnames(serie_temporal)[2]
-  lag_max = serie_temporal %>% pull(!!sym(colnames(serie_temporal)[2])) %>% length()
+get_pqd <- function(serie_temporal,d,ci  = 0.95){
+  # intervalo de conf
   
-  ci = qnorm((1+0.95)/2)/sqrt(lag_max) # calcula o intervalo de confiança
+  lag_max = serie_temporal %>% pull(transformacao) %>% length()
+  if (d != 0){
+    serie_temporal <- serie_temporal %>% mutate(transformacao = difference(transformacao, lag = 1 , differences = d))
+  }
+  
+  ci = qnorm((1+0.95)/2)/sqrt(lag_max) 
+  
+  
   # autocorrelacao
   
+  acf = get_acf(serie_temporal,lag_max,"transformacao") %>% pull(acf)
+  not_sig = !acf %>%  between(-ci,ci) # calcula quem passou do intervalo de confiança
+  sequencia = rle(not_sig) 
+  q = sequencia$lengths[1]
+  acf_truncado_acf <- acf[q:length(acf)]
+  sinais_acf =  (acf_truncado_acf - lag(acf_truncado_acf))  %>% na.remove()
+  sinais_obs_acf <- sum(sinais_acf > 0)
+  p_valor_acf <- binom.test(sinais_obs_acf,length(sinais_acf))$p.value
   
-  not_sig = !get_acf(serie_temporal,lag_max,var) %>% pull(acf) %>% between(-ci,ci) # calcula quem passou do intervalo de confiança
   
-  sequencia = rle(not_sig) # faz o Run-length encoding (RLE) do vetor not_sig calcula o tamanho das sequencias de true e false
-  #candidatos_MA = cumsum(sequencia$lengths)  %>% tibble() %>% slice( which(sequencia$values == TRUE) ) %>% pull() # candidatos 
   
-  # autocorrelacao parcial
   
-  not_sig_partial =  !get_acf(serie_temporal,lag_max,var,"partial") %>% pull(acf) %>% between(-ci,ci)
+  # auto autocorrelacao parcial
+  pacf = get_acf(serie_temporal,lag_max,"transformacao", "partial") %>% pull(acf)
+  not_sig_partial =  !pacf %>% between(-ci,ci)
   sequencia_partial = rle(not_sig_partial) 
+  p = sequencia_partial$lengths[1]
+  pacf_truncado_acf <- pacf[p:length(pacf)]
+  sinais_pacf =  (pacf_truncado_acf - lag(pacf_truncado_acf))  %>% na.remove()
+  sinais_obs_pacf <- sum(sinais_pacf > 0)
+  p_valor_pacf <- binom.test(sinais_obs_pacf,length(sinais_pacf))$p.value
   
-  #candidatos_AR = cumsum(sequencia_partial$lengths)  %>% tibble() %>% slice( which(sequencia_partial$values == TRUE) ) %>% pull()
+  arma = (p > 0) & (q > 0)
+  if(arma){
+    truncar = abs(p - q)
+    pacf_truncado_arima <- pacf[truncar:length(pacf)]
+    
+    sinais_pacf_arima =  (pacf_truncado_arima - lag(pacf_truncado_arima))  %>% na.remove()
+    sinais_obs_pacf_arima <- sum(sinais_pacf_arima > 0)
+    p_valor_pacf_arima <- binom.test(sinais_obs_pacf_arima,length(sinais_pacf_arima))$p.value
+    
+    
+    acf_truncado_arima <- acf[truncar:length(acf)]
+    sinais_acf_arima =  (acf_truncado_arima - lag(acf_truncado_arima))  %>% na.remove()
+    sinais_obs_acf_arima <- sum(sinais_acf_arima > 0)
+    p_valor_acf_arima <- binom.test(sinais_obs_acf_arima,length(sinais_acf_arima))$p.value
+  }
   
   
-  # suguestão para o user
-  if(length(sequencia$lengths) == 2){
-    modelo = glue('MA{sequencia$lengths[1]}')
+  
+  
+  
+  
+  # medias moveis
+  if ((which(sequencia$values)[1] == 1) & (p_valor_pacf > 0.05) & !arma) {
     p = 0
-    q = sequencia$lengths[1]
-    
-  } else if(length(sequencia_partial$lengths) == 2){
-    modelo = glue('AR{sequencia_partial$lengths[1]}')
+    modelo = glue('pdq(0,{d},{q})')
+  } else if ((which(sequencia_partial$values)[1] == 1) & (p_valor_acf > 0.05) & !arma) {
     q = 0
-    p = sequencia_partial$lengths[1]
-    
-  }else if(length(sequencia$lengths) >= 2 | length(sequencia_partial$lengths) >= 2){
-    
-    modelo = glue('ARMA({sequencia_partial$lengths[1]},{sequencia$lengths[1]})')
-    q = sequencia$lengths[1]
-    p = sequencia_partial$lengths[1]
-  } else{ modelo = 'não foi possível selecionar um modelo'}
+    modelo = glue('pdq({p},{d},0)')
+  } else if (arma & (p_valor_pacf_arima > 0.05)) {
+    modelo = glue('pdq({p},{d},{q})')
+  } else {
+    modelo = 'Não é possível encontrar um modelo'
+  }
   
-  return(glue('pdq({p},0,{q})'))
+  ruido_branco = (p == 0) & (q==0)
+  return(list('modelo' = modelo,
+              'ruido_branco' = ruido_branco))
   
-} 
+}
+
 
 
 
@@ -325,50 +388,123 @@ get_transformacoes_modelo <- function(serie,tipo_transformacao = "identidade"){
 #PDQ
 
 
-fit_serie <- function(serie,tipo_transformacao = 'identidade', dif ='1:5' , seasonal_dif = '1:5' ,p = '1:5',q = '1:5',P = '1:5',Q = '1:5',lag_seasonal_dif = "automatico"){
-  serie_modificada <- get_transformacoes_modelo(serie,tipo_transformacao)
-  # definir parâmetros automático
-  
-  if(lag_seasonal_dif == "automatico"){lag_seasonal_dif =  serie_modificada %>% pull(granularidade) %>% guess_frequency()}
-  # Ajuste dos modelos
-  
-  string_transformacao = switch(tipo_transformacao,
-                                identidade = 'total',
-                                box_cox = glue('box_cox(total, {lambda})'),
-                                sqrt = 'sqrt(total)',
-                                inversa = '1/total',
-                                log = 'log(total)')
-  
-  #usuario
-  
-  PQD = ifelse(seasonal_dif == 0,'PDQ(0,0,0)', glue('PDQ({P},{seasonal_dif},{Q}, period = {lag_seasonal_dif})'))
-  string_modelo_usuario= glue('0 + pdq({p},{dif},{q}) + {PQD}')
-  formula_usuario = as.formula(paste(string_transformacao,'~',string_modelo_usuario))
-  print(string_modelo_usuario)
+fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , seasonal_dif = '0:1' ,p = '0:5',q = '0:5',P = '0:2',Q = '0:2',lag_seasonal_dif = "automatico",modelos){
+  serie_modificada = get_transformacoes_modelo(serie,tipo_transformacao)
   
   
-  # modelo sugerido
+  pqd_modelo_sugerido =  get_pqd(serie_modificada,d=d)['modelo']
+  if(pqd_modelo_sugerido['ruido_branco'] == "Verifique se a série é ruído branco")
+  {return(123)}
   
-  pqd_modelo_sugerido =  get_pqd(serie_modificada)
-  string_modelo_sugerido = glue('0 + {pqd_modelo_sugerido} + PDQ(0,0,0)')
-  formula_modelo_sugerido = as.formula(paste(string_transformacao,'~',string_modelo_sugerido))
+  else{
+    
+    
+    
+    if(lag_seasonal_dif == "automatico"){lag_seasonal_dif =  serie_modificada %>% pull(granularidade) %>% guess_frequency() %>% floor() }
+    
+    
+    
+    # Ajuste dos modelos
+    
+    string_transformacao = switch(tipo_transformacao,
+                                  identidade = 'total',
+                                  box_cox = glue('box_cox(total, {lambda})'),
+                                  sqrt = 'sqrt(total)',
+                                  inversa = '1/total',
+                                  log = 'log(total)')
+    
+    #usuario
+    
+    PQD = ifelse(seasonal_dif == 0,'PDQ(0,0,0)', glue('PDQ({P},{seasonal_dif},{Q}, period = {lag_seasonal_dif})'))
+    string_modelo_usuario= glue('0 + pdq({p},{dif},{q}) + {PQD}')
+    formula_usuario = as.formula(paste(string_transformacao,'~',string_modelo_usuario))
+    
+    
+    # modelo sugerido
+    
+    string_modelo_sugerido = glue('0 + {pqd_modelo_sugerido} + PDQ(0,0,0)')
+    formula_modelo_sugerido = as.formula(paste(string_transformacao,'~',string_modelo_sugerido))
+    
+    
+    # SARIMA
+    
+    formula_SARIMA = as.formula(glue('{string_transformacao} ~ 0'))
+    
+    
+    # ARMA
+    string_modelo_ARMA = glue('0 + pdq(1:5,0,1:5) + PDQ(0,0,0)')
+    formula_modelo_ARMA= as.formula(paste(string_transformacao,'~',string_modelo_ARMA))
+    
+    # ARIMA
+    
+    string_modelo_ARIMA = glue('0 + pdq(1:5,1:2,1:5) + PDQ(0,0,0)')
+    formula_modelo_ARIMA= as.formula(paste(string_transformacao,'~',string_modelo_ARIMA))
+    
+    
+    fit_ARMA<- if ('arma' %in% modelos) {
+      serie %>%
+        model(arma = ARIMA(formula_modelo_ARMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    fit_ARIMA<- if ('arima' %in% modelos) {
+      
+      serie %>%
+        model(arima = ARIMA(formula_modelo_ARIMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    
+    
+    fit_usuario <- if ('usuario' %in% modelos) {
+      serie %>%
+        model(usuario = ARIMA(formula_usuario, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    fit_ingenuo <- if ('modelo_pia' %in% modelos & pqd_modelo_sugerido != "Não é possível encontrar um modelo") {
+      serie %>%
+        model(modelo_pia = ARIMA(formula_modelo_sugerido, stepwise = FALSE))
+    } else if ('modelo_pia' %in% modelos & pqd_modelo_sugerido == "Não é possível encontrar um modelo") {
+      'Não foi possível encontrar um modelo'
+    } else if (!('modelo_pia' %in% modelos)) {
+      NA
+    }
+    
+    fit_AUTO_sarima <- if ('auto_sarima' %in% modelos) {
+      serie %>%
+        model(auto_sarima = ARIMA(formula_SARIMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    
+    
+    
+    fit = tibble(
+      usuario = fit_usuario,
+      modelo_pia = fit_ingenuo,
+      arma = fit_ARMA,
+      auto_sarima = fit_AUTO_sarima,
+      arima = fit_ARIMA,
+      
+      .name_repair = c('minimal')
+    )
+    
+    # para o relatório
+    fit <- fit %>% select(!where(is.na))
+    
+    return(fit)
+    
+    
+    # para o relatorio
+    
+  }
   
-  
-  # SARIMA
-  
-  formula_SARIMA = as.formula(glue('{string_transformacao} ~ 0'))
-  
-  fit =  serie %>%
-    model(usuario = ARIMA(formula_usuario,stepwise = FALSE),
-          ingenuo = ARIMA(formula_modelo_sugerido),
-          AUTO_sarima = ARIMA(formula_SARIMA,stepwise = FALSE))
-  
-  
-  
-  # para o relatorio
-  
-  
-  return(fit)
   
 }
+
 
