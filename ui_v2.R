@@ -1,18 +1,56 @@
   # Ui
-  ui <- fluidPage(
+  ui <- dashboardPage(
+    dashboardHeader(title = "Exemplo Shiny Dashboard",disable = TRUE),
+    dashboardSidebar(disable = TRUE),
+    dashboardBody(
+    fluidPage(
     useShinyjs(),
     tags$style(
       HTML(
         "
+        .shiny-notification {height: 100px; width: 300px; font-size: 25px; color: black}
+        
+        
+        .nav-tabs-custom {
+          margin-bottom: 20px;
+          background: #fff;
+          box-shadow: 10px 10px 5px rgba(0,0,0,.1);
+          border-top-left-radius: 20px; border-top-right-radius: 20px;
+        border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+        }
+         
+         .nav-tabs-custom>.tab-content {
+          border-bottom-right-radius: 20px;
+          border-bottom-left-radius: 20px;
+          }
+    
+        .box-header { color: white; border-top-left-radius: 20px; border-top-right-radius: 20px;
+        border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; background-color: #11104d; }
+        
+        
+        .box {
+          position: relative;
+          border-radius: 20px;
+          background: #fff;
+          border-top: 3px solid #11104d;
+          margin-bottom: 20px;
+          width: 100%;
+          box-shadow: 5px 5px 5px rgba(0,0,0,.1);
+          }
+        
+        #filtro_box > .box-header { color: black; border-top-left-radius: 20px; border-top-right-radius: 20px;
+        border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; background-color: #FFFFFF; }
+        
+        
         #controls {
-      position: absolute;
-      top: 200px; /* Posição inicial no eixo Y */
-      left: 1150px; /* Posição inicial no eixo X */
-      width: 250px; /* Largura do painel */
-      background-color: rgba(255, 255, 255, 0.25); /* Fundo semi-transparente */
-      border: 1px solid #000000; /* Borda do painel */
-      padding: 10px; /* Espaçamento interno */
-    }
+         position: absolute;
+         top: 200px; /* Posição inicial no eixo Y */
+         left: 1150px; /* Posição inicial no eixo X */
+         width: 250px; /* Largura do painel */
+         background-color: rgba(255, 255, 255, 0.25); /* Fundo semi-transparente */
+         border: 1px solid #000000; /* Borda do painel */
+         padding: 10px; /* Espaçamento interno */
+          }
         .box-title {
             text-align: center;
         }
@@ -226,10 +264,11 @@
       }
       
       body {background-color: #FFFFFF;}
-      
+     
       
       "
       )
+      
     ),
     
     # Cabeçalho da página
@@ -313,3 +352,7 @@
     
     uiOutput("conteudo")
   )
+  
+    )
+  )
+  
