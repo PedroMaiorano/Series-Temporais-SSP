@@ -30,6 +30,7 @@ library(shinyalert)
 library(zoo)
 plan(multisession)
 
+
 #install.packages("tseries",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
 
 #install.packages("glue",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
@@ -41,517 +42,6 @@ plan(multisession)
 #install.packages("forecast",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
 
 #install.packages("funtimes",lib="/home/shiny/R/x86_64-pc-linux-gnu-library/4.0")
-
-
-aplicarEstilosAoGrafico <- function(graficoId) {
-  runjs(sprintf('
-    var graficoDiv = document.getElementById("%s");
-    graficoDiv.style.borderRadius = "50px";  // ou qualquer valor desejado
-    graficoDiv.style.boxShadow = "8px 8px 16px #888888";
-  ', graficoId))
-}
-
-get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
-  
-  dados_filtrados = dados %>% select({{coluna}})
-  
-  return(dados_filtrados %>% ACF(lag_max = lag_max,type = tipo))
-}
-
-
-dados_filtrados_tempo <- function(dados, granularidade = "ano") {
-  data <- dados %>% 
-    filter(data_bo_reg != -1) %>% 
-    mutate(data_bo_reg = ymd(data_bo_reg)) %>%  
-    filter(year(data_bo_reg) >= 2003) %>% 
-    filter(year(data_bo_reg) <= 2022)
-  
-  if(granularidade == "sem"){
-    semestre_data = data %>%  select(data_bo_reg) %>% map( ~ semester(.x, with_year  = TRUE)) %>% unlist() %>% yearmon() %>% yearmonth()
-    serie_semestre <- data %>% mutate(granularidade = semestre_data) %>%  group_by(granularidade)%>% summarise( total = n())
-    
-    invervalo_semestre = new_interval(month = 6)
-    
-    
-    serie <-
-      serie_semestre %>%
-      build_tsibble(
-        index = granularidade,
-        interval = invervalo_semestre
-      ) 
-    
-    
-    
-  }else{
-    index_col <- switch(granularidade,
-                        "ano" = year(data$data_bo_reg),
-                        "tri" = yearquarter(data$data_bo_reg),
-                        "mes" = yearmonth(data$data_bo_reg),
-                        "semana" = yearweek(data$data_bo_reg)
-    )
-    
-    serie <- data %>% 
-      select(data_bo_reg) %>% 
-      mutate(granularidade = index_col) %>% 
-      group_by(granularidade) %>% 
-      summarise(total = n()) %>% 
-      as_tsibble(index = granularidade)
-  }
-  return(serie)
-}
-
-
-
-
-########################
-
-get_transformacoes <- function(series_temporal, var = "total") {
-  if(var == "box_cox"){
-    lambda <- series_temporal %>% 
-      features(total, features = guerrero)  %>% 
-      pull(lambda_guerrero)}
-  
-  series_temporal <- series_temporal %>%
-    mutate(log = if (var == "log") log(total) else NULL,
-           sqrt = if (var == "sqrt") sqrt(total) else NULL,
-           inversa = if (var == "inversa") 1/total else NULL,
-           box_cox = if (var == "box_cox") box_cox(total, lambda) else NULL)
-  if (var != "total"){
-    series_temporal <- series_temporal[,-2]}
-  
-  return(series_temporal)
-}
-
-
-
-
-
-diff <- function(serie,lag_ , dif){
-  serie_modificada = serie %>% mutate(transformacao = difference(!!sym(colnames(serie)[2]), lag = lag_ , differences = dif))
-  if(colnames(serie_modificada)[2] == "transformacao"){
-    return(serie_modificada)}
-  else{
-    return(serie_modificada %>% select(-2))}
-}
-
-
-
-
-#####
-teste_adf <- function(serie_temporal,var){
-  adf_test  =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% adf.test()
-  print(adf_test)
-  
-}
-
-teste_kpss <- function(serie_temporal,var){
-  serie_temporal %>% features({{var}}, unitroot_kpss) }
-
-teste_kpss_numero_diff <- function(serie_temporal,var){
-  serie_temporal %>% features({{var}}, unitroot_ndiffs ) }
-
-
-teste_kpss_season_diff <- function(serie_temporal,var){
-  serie_temporal %>% features({{var}}, unitroot_nsdiffs ) }
-
-
-
-teste_cox_stuart <- function(serie_temporal,var){
-  cox_stuart =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% cs.test()
-  print(cox_stuart)
-  
-}
-
-teste_kendall<- function(serie_temporal,var){
-  kendall =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% mk.test()
-  print(kendall)
-  
-}
-
-
-teste_WAVK <- function(serie_temporal,var){
-  serie =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) 
-  
-  WAVK = notrend_test(serie, test = "WAVK", factor.length = "adaptive.selection")
-  
-  print(WAVK)}
-
-teste_seasonal <- function(serie_temporal,var  ,teste = "combined"){
-  frequencia  = serie_temporal %>% pull(granularidade) %>% guess_frequency()
-  sesonal =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% isSeasonal(test = teste,freq = frequencia)
-  print(sesonal)}
-
-
-####
-#teste <- dados_filtrados_tempo(homicidioDoloso_parcial, "mes")
-#teste
-#teste2 <- teste_kpss(teste, total)
-#teste2
-#
-#teste3 <- teste_kpss_numero_diff(teste, total)
-#teste3
-#
-#
-#teste4 <- teste_kpss_season_diff(teste, total)
-#teste4
-#
-#teste5 <- teste_cox_stuart(teste,total)
-#teste5
-#
-#teste6 <- teste_kendall(teste,total)
-#
-#teste7<- teste_WAVK(teste,total)
-#teste7
-#
-#teste8<- teste_seasonal(teste,total)
-
-
-
-
-get_acf_sig <- function(serie_temporal, ci  = 0.95,var){
-  lag_max = serie_temporal %>% pull(total) %>% length()
-  
-  ci = qnorm((1+0.95)/2)/sqrt(lag_max) # calcula o intervalo de confiança
-  
-  # autocorrelacao
-  not_sig = !get_acf(serie_temporal,lag_max,var) %>% pull(acf) %>% between(-ci,ci) # calcula quem passou do intervalo de confiança
-  sequencia = rle(not_sig) # faz o Run-length encoding (RLE) do vetor not_sig calcula o tamanho das sequencias de true e false
-  
-  #candidatos_MA = cumsum(sequencia$lengths)  %>% tibble() %>% slice( which(sequencia$values == TRUE) ) %>% pull() # candidatos 
-  
-  # autocorrelacao parcial
-  
-  not_sig_partial =  !get_acf(serie_temporal,lag_max,var,"partial") %>% pull(acf) %>% between(-ci,ci)
-  sequencia_partial = rle(not_sig_partial) 
-  
-  #candidatos_AR = cumsum(sequencia_partial$lengths)  %>% tibble() %>% slice( which(sequencia_partial$values == TRUE) ) %>% pull()
-  
-  
-  # suguestão para o user
-  if(length(sequencia$lengths) == 2){
-    modelo = glue('MA{sequencia$lengths[1]}')
-    p = 0
-    q = sequencia$lengths[1]
-    
-  } else if(length(sequencia_partial$lengths) == 2){
-    modelo = glue('AR{sequencia_partial$lengths[1]}')
-    q = 0
-    p = sequencia$lengths[1]
-    
-  }else if(length(sequencia$lengths) >= 2 | length(sequencia_partial$lengths) >= 2){
-    
-    modelo = glue('ARMA({sequencia_partial$lengths[1]},{sequencia$lengths[1]})')
-    q = sequencia$lengths[1]
-    p = sequencia_partial$lengths[1]
-  } else{ modelo = 'não foi possível selecionar um modelo'}
-  
-  # ajuste o modelo
-  
-  formula = as.formula(glue('{var} ~  0 + pdq({p},0,{q}) + PDQ(0,0,0)'))
-  formula_arima = as.formula(glue('{var} ~  0 + PDQ(0,0,0)'))
-  formula_PQD= as.formula(glue('{var} ~  0'))
-  
-  
-  fit <- serie_temporal %>% 
-    model(modelo_sugerido = ARIMA(formula),
-          modelo_arima = ARIMA(formula_arima, stepwise = FALSE),
-          modelo_arima_default = ARIMA(formula_PQD, stepwise = FALSE))
-  
-  
-  
-  return(fit)
-  
-  
-}
-
-
-plot_raiz <- function(fit,modelo){
-  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_arma() + theme_pubclean() + ggtitle(glue('{modelo}')) + theme(plot.title = element_text(hjust = 0.5))
-  return(plot)
-  
-}
-
-
-
-plot_res <- function(fit,modelo){
-  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_tsresiduals() + ggtitle(glue('{modelo}'))
-  return(plot)
-  
-  
-}
-
-
-
-plot_predicao <- function(fit,modelo,h,serie){
-  fit %>% select({{modelo}}) %>%  pull() %>% forecast::forecast(h = {{h}}) %>% autoplot(serie) +  theme_pubclean()
-}
-
-
-
-plot_report <- function(fit,modelo){
-  fit %>% select({{modelo}}) %>% pull() %>% report() 
-}
-
-
-teste_ljung_box <- function(objeto_fit,modelo){
-  modelo_selecionado <- objeto_fit %>% select({{modelo}}) %>% pull() %>% pull()
-  p = modelo_selecionado[[1]]$fit$spec$p
-  q = modelo_selecionado[[1]]$fit$spec$q
-  P = modelo_selecionado[[1]]$fit$spec$P
-  Q = modelo_selecionado[[1]]$fit$spec$Q
-  freq = modelo_selecionado[[1]]$fit$spec$period
-  df = p +q + P + Q
-  objeto_fit %>% select({{modelo}}) %>% pull() %>% augment() %>% features(.innov, ljung_box, lag = 2*freq, dof = df)
-  
-  
-  
-}
-
-
-
-######
-
-
-
-get_pqd <- function(serie_temporal,d,ci  = 0.95){
-  # intervalo de conf
-  
-  lag_max = serie_temporal %>% pull(transformacao) %>% length()
-  if (d != 0){
-    serie_temporal <- serie_temporal %>% mutate(transformacao = difference(transformacao, lag = 1 , differences = d))
-  }
-  
-  ci = qnorm((1+0.95)/2)/sqrt(lag_max) 
-  
-  
-  # autocorrelacao
-  
-  acf = get_acf(serie_temporal,lag_max,"transformacao") %>% pull(acf)
-  not_sig = !acf %>%  between(-ci,ci) # calcula quem passou do intervalo de confiança
-  sequencia = rle(not_sig) 
-  q = sequencia$lengths[1]
-  acf_truncado_acf <- acf[q:length(acf)]
-  sinais_acf =  (acf_truncado_acf - lag(acf_truncado_acf))  %>% na.remove()
-  sinais_obs_acf <- sum(sinais_acf > 0)
-  p_valor_acf <- binom.test(sinais_obs_acf,length(sinais_acf))$p.value
-  
-  
-  
-  
-  # auto autocorrelacao parcial
-  pacf = get_acf(serie_temporal,lag_max,"transformacao", "partial") %>% pull(acf)
-  not_sig_partial =  !pacf %>% between(-ci,ci)
-  sequencia_partial = rle(not_sig_partial) 
-  p = sequencia_partial$lengths[1]
-  pacf_truncado_acf <- pacf[p:length(pacf)]
-  sinais_pacf =  (pacf_truncado_acf - lag(pacf_truncado_acf))  %>% na.remove()
-  sinais_obs_pacf <- sum(sinais_pacf > 0)
-  p_valor_pacf <- binom.test(sinais_obs_pacf,length(sinais_pacf))$p.value
-  
-  arma = (p > 0) & (q > 0)
-  if(arma){
-    truncar = abs(p - q)
-    pacf_truncado_arima <- pacf[truncar:length(pacf)]
-    
-    sinais_pacf_arima =  (pacf_truncado_arima - lag(pacf_truncado_arima))  %>% na.remove()
-    sinais_obs_pacf_arima <- sum(sinais_pacf_arima > 0)
-    p_valor_pacf_arima <- binom.test(sinais_obs_pacf_arima,length(sinais_pacf_arima))$p.value
-    
-    
-    acf_truncado_arima <- acf[truncar:length(acf)]
-    sinais_acf_arima =  (acf_truncado_arima - lag(acf_truncado_arima))  %>% na.remove()
-    sinais_obs_acf_arima <- sum(sinais_acf_arima > 0)
-    p_valor_acf_arima <- binom.test(sinais_obs_acf_arima,length(sinais_acf_arima))$p.value
-  }
-  
-  
-  
-  
-  
-  
-  # medias moveis
-  if ((which(sequencia$values)[1] == 1) & (p_valor_pacf > 0.05) & !arma) {
-    p = 0
-    modelo = glue('pdq(0,{d},{q})')
-  } else if ((which(sequencia_partial$values)[1] == 1) & (p_valor_acf > 0.05) & !arma) {
-    q = 0
-    modelo = glue('pdq({p},{d},0)')
-  } else if (arma & (p_valor_pacf_arima > 0.05)) {
-    modelo = glue('pdq({p},{d},{q})')
-  } else {
-    modelo = 'Não é possível encontrar um modelo'
-  }
-  
-  ruido_branco = (p == 0) & (q==0)
-  return(list('modelo' = modelo,
-              'ruido_branco' = ruido_branco))
-  
-}
-
-
-
-
-
-
-
-
-
-get_transformacoes_modelo <- function(serie,tipo_transformacao = "identidade"){
-  if(tipo_transformacao == "box_cox"){lambda = serie %>% features(!!sym(colnames(serie)[2]), features = guerrero) %>% pull(lambda_guerrero)}
-  serie_modificada = switch(tipo_transformacao,
-                            
-                            identidade = {
-                              serie %>%
-                                mutate(transformacao = !!sym(colnames(serie)[2]))
-                            },
-                            
-                            
-                            log = {
-                              serie %>%
-                                mutate(transformacao = log(!!sym(colnames(serie)[2])))
-                            },
-                            sqrt = {
-                              serie %>%
-                                mutate(transformacao = sqrt(!!sym(colnames(serie)[2])))
-                            },
-                            inversa = {
-                              serie %>%
-                                mutate(transformacao = 1/!!sym(colnames(serie)[2]))
-                            },
-                            box_cox = {
-                              serie %>%
-                                mutate(transformacao = box_cox(!!sym(colnames(serie)[2]), lambda))
-                            },
-  )
-  return(serie_modificada)      
-}
-
-
-
-
-#<ARIMA(0,1,1)(1,0,1)[12]>
-#PDQ
-
-
-fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , seasonal_dif = '0:1' ,p = '0:5',q = '0:5',P = '0:2',Q = '0:2',lag_seasonal_dif = "automatico",modelos){
-  serie_modificada = get_transformacoes_modelo(serie,tipo_transformacao)
-  
-  
-  pqd_modelo_sugerido =  get_pqd(serie_modificada,d=d)['modelo']
-  if(pqd_modelo_sugerido['ruido_branco'] == "Verifique se a série é ruído branco")
-  {return(123)}
-  
-  else{
-    
-    
-    
-    if(lag_seasonal_dif == "automatico"){lag_seasonal_dif =  serie_modificada %>% pull(granularidade) %>% guess_frequency() %>% floor() }
-    
-    
-    
-    # Ajuste dos modelos
-    
-    string_transformacao = switch(tipo_transformacao,
-                                  identidade = 'total',
-                                  box_cox = glue('box_cox(total, {lambda})'),
-                                  sqrt = 'sqrt(total)',
-                                  inversa = '1/total',
-                                  log = 'log(total)')
-    
-    #usuario
-    
-    PQD = ifelse(seasonal_dif == 0,'PDQ(0,0,0)', glue('PDQ({P},{seasonal_dif},{Q}, period = {lag_seasonal_dif})'))
-    string_modelo_usuario= glue('0 + pdq({p},{dif},{q}) + {PQD}')
-    formula_usuario = as.formula(paste(string_transformacao,'~',string_modelo_usuario))
-    
-    
-    # modelo sugerido
-    
-    string_modelo_sugerido = glue('0 + {pqd_modelo_sugerido} + PDQ(0,0,0)')
-    formula_modelo_sugerido = as.formula(paste(string_transformacao,'~',string_modelo_sugerido))
-    
-    
-    # SARIMA
-    
-    formula_SARIMA = as.formula(glue('{string_transformacao} ~ 0'))
-    
-    
-    # ARMA
-    string_modelo_ARMA = glue('0 + pdq(1:5,0,1:5) + PDQ(0,0,0)')
-    formula_modelo_ARMA= as.formula(paste(string_transformacao,'~',string_modelo_ARMA))
-    
-    # ARIMA
-    
-    string_modelo_ARIMA = glue('0 + pdq(1:5,1:2,1:5) + PDQ(0,0,0)')
-    formula_modelo_ARIMA= as.formula(paste(string_transformacao,'~',string_modelo_ARIMA))
-    
-    
-    fit_ARMA<- if ('arma' %in% modelos) {
-      serie %>%
-        model(arma = ARIMA(formula_modelo_ARMA, stepwise = FALSE))
-    } else {
-      NA
-    }
-    
-    fit_ARIMA<- if ('arima' %in% modelos) {
-      
-      serie %>%
-        model(arima = ARIMA(formula_modelo_ARIMA, stepwise = FALSE))
-    } else {
-      NA
-    }
-    
-    
-    
-    fit_usuario <- if ('usuario' %in% modelos) {
-      serie %>%
-        model(usuario = ARIMA(formula_usuario, stepwise = FALSE))
-    } else {
-      NA
-    }
-    
-    fit_ingenuo <- if ('modelo_pia' %in% modelos & pqd_modelo_sugerido != "Não é possível encontrar um modelo") {
-      serie %>%
-        model(modelo_pia = ARIMA(formula_modelo_sugerido, stepwise = FALSE))
-    } else if ('modelo_pia' %in% modelos & pqd_modelo_sugerido == "Não é possível encontrar um modelo") {
-      'Não foi possível encontrar um modelo'
-    } else if (!('modelo_pia' %in% modelos)) {
-      NA
-    }
-    
-    fit_AUTO_sarima <- if ('auto_sarima' %in% modelos) {
-      serie %>%
-        model(auto_sarima = ARIMA(formula_SARIMA, stepwise = FALSE))
-    } else {
-      NA
-    }
-    
-    
-    
-    
-    fit = tibble(
-      usuario = fit_usuario,
-      modelo_pia = fit_ingenuo,
-      arma = fit_ARMA,
-      auto_sarima = fit_AUTO_sarima,
-      arima = fit_ARIMA,
-      
-      .name_repair = c('minimal')
-    )
-    
-    # para o relatório
-    fit <- fit %>% select(!where(is.na))
-    
-    return(fit)
-    
-    
-    # para o relatorio
-    
-  }
-  
-  
-}
-
 
 
 Side_hom <- 
@@ -767,153 +257,150 @@ Side_iml <- fluidPage(
   
   dateRangeInput('dateRange2',
                  label = "Filtrar por data",
-                 start = "2016-04-01", end = "2022-12-31",
-                 min = "2016-04-01", max = "2022-12-31",
+                 start = "2013-01-01", end = "2022-12-31",
+                 min = "2013-01-01", max = "2022-12-31",
                  separator = " - ", format = "dd/mm/yy",
                  startview = 'year', language = 'pt-BR', weekstart = ),
   
   actionButton("aplicar","Modificar os dados"),
   actionButton("reset","Não usar Filtro"))  
 
-Side_dad <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2021-01-05", end = "2022-12-31",
-                 min = "2021-01-05", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  pickerInput(
-    inputId = "natureza",
-    label = "Natureza da ocorrência", 
-    choices = c(
-      "estupro",
-      "estupro de vulnerável",
-      "furto - outros",
-      "furto de carga",
-      "furto de veículo",
-      "homicídio doloso",
-      "homicídio doloso em estab. prisional",
-      "homicídio doloso por acidente de trânsito",
-      "latrocínio",
-      "lesão corporal seguida de morte",
-      "roubo - outros",
-      "roubo a banco",
-      "roubo de carga",
-      "roubo de veículo"
-    ),
-    selected = c(
-      "estupro",
-      "estupro de vulnerável",
-      "furto - outros",
-      "furto de carga",
-      "furto de veículo",
-      "homicídio doloso",
-      "homicídio doloso em estab. prisional",
-      "homicídio doloso por acidente de trânsito",
-      "latrocínio",
-      "lesão corporal seguida de morte",
-      "roubo - outros",
-      "roubo a banco",
-      "roubo de carga",
-      "roubo de veículo"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  pickerInput(
-    inputId = "descr_local",
-    label = "Descrição do local da ocorrência", 
-    choices = c(
-      "area não ocupada",
-      "centro comerc./empresarial",
-      "comércio e serviços",
-      "condomínio comercial",
-      "condomínio residencial",
-      "entidade assistencial",
-      "escritório",
-      "estabelecimento bancário",
-      "estabelecimento comercial",
-      "estabelecimento de ensino",
-      "estabelecimento industrial",
-      "estabelecimento prisional",
-      "estacionamento com vigilância",
-      "estacionamento particular",
-      "estacionamento público",
-      "estrada de ferro",
-      "favela",
-      "garagem coletiva de prédio",
-      "garagem ou abrigo de residência",
-      "hospedagem",
-      "internet",
-      "lazer e recreação",
-      "local clandestino/ilegal",
-      "não informado",
-      "outros",
-      "repartição pública",
-      "residência",
-      "restaurante e afins",
-      "rodovia/estrada",
-      "saúde",
-      "serviços e bens públicos",
-      "shopping center",
-      "sindicato",
-      "templo e afins",
-      "terminal/estação",
-      "unidade rural",
-      "veículo em movimento",
-      "via pública"
-    ),
-    selected = c(
-      "area não ocupada",
-      "centro comerc./empresarial",
-      "comércio e serviços",
-      "condomínio comercial",
-      "condomínio residencial",
-      "entidade assistencial",
-      "escritório",
-      "estabelecimento bancário",
-      "estabelecimento comercial",
-      "estabelecimento de ensino",
-      "estabelecimento industrial",
-      "estabelecimento prisional",
-      "estacionamento com vigilância",
-      "estacionamento particular",
-      "estacionamento público",
-      "estrada de ferro",
-      "favela",
-      "garagem coletiva de prédio",
-      "garagem ou abrigo de residência",
-      "hospedagem",
-      "internet",
-      "lazer e recreação",
-      "local clandestino/ilegal",
-      "não informado",
-      "outros",
-      "repartição pública",
-      "residência",
-      "restaurante e afins",
-      "rodovia/estrada",
-      "saúde",
-      "serviços e bens públicos",
-      "shopping center",
-      "sindicato",
-      "templo e afins",
-      "terminal/estação",
-      "unidade rural",
-      "veículo em movimento",
-      "via pública"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
+Side_dad <- fluidPage(dateRangeInput('dateRange2',
+                                     label = "Filtrar por data",
+                                     start = "2022-01-01", end = "2022-12-31",
+                                     min = "2022-01-01", max = "2022-12-31",
+                                     separator = " - ", format = "dd/mm/yy",
+                                     startview = 'year', language = 'pt-BR', weekstart = 1),
+                      pickerInput(
+                        inputId = "natureza",
+                        label = "Natureza da ocorrência", 
+                        choices = c(
+                          "estupro",
+                          "estupro de vulnerável",
+                          "furto - outros",
+                          "furto de carga",
+                          "furto de veículo",
+                          "homicídio doloso",
+                          "homicídio doloso em estab. prisional",
+                          "homicídio doloso por acidente de trânsito",
+                          "latrocínio",
+                          "lesão corporal seguida de morte",
+                          "roubo - outros",
+                          "roubo a banco",
+                          "roubo de carga",
+                          "roubo de veículo"
+                        ),
+                        selected = c(
+                          "estupro",
+                          "estupro de vulnerável",
+                          "furto - outros",
+                          "furto de carga",
+                          "furto de veículo",
+                          "homicídio doloso",
+                          "homicídio doloso em estab. prisional",
+                          "homicídio doloso por acidente de trânsito",
+                          "latrocínio",
+                          "lesão corporal seguida de morte",
+                          "roubo - outros",
+                          "roubo a banco",
+                          "roubo de carga",
+                          "roubo de veículo"
+                        ),
+                        options = list(
+                          `actions-box` = TRUE), 
+                        multiple = TRUE
+                      ),
+                      
+                      pickerInput(
+                        inputId = "descr_local",
+                        label = "Descrição do local da ocorrência", 
+                        choices = c(
+                          "area não ocupada",
+                          "centro comerc./empresarial",
+                          "comércio e serviços",
+                          "condomínio comercial",
+                          "condomínio residencial",
+                          "entidade assistencial",
+                          "escritório",
+                          "estabelecimento bancário",
+                          "estabelecimento comercial",
+                          "estabelecimento de ensino",
+                          "estabelecimento industrial",
+                          "estabelecimento prisional",
+                          "estacionamento com vigilância",
+                          "estacionamento particular",
+                          "estacionamento público",
+                          "estrada de ferro",
+                          "favela",
+                          "garagem coletiva de prédio",
+                          "garagem ou abrigo de residência",
+                          "hospedagem",
+                          "internet",
+                          "lazer e recreação",
+                          "local clandestino/ilegal",
+                          "não informado",
+                          "outros",
+                          "repartição pública",
+                          "residência",
+                          "restaurante e afins",
+                          "rodovia/estrada",
+                          "saúde",
+                          "serviços e bens públicos",
+                          "shopping center",
+                          "sindicato",
+                          "templo e afins",
+                          "terminal/estação",
+                          "unidade rural",
+                          "veículo em movimento",
+                          "via pública"
+                        ),
+                        selected = c(
+                          "area não ocupada",
+                          "centro comerc./empresarial",
+                          "comércio e serviços",
+                          "condomínio comercial",
+                          "condomínio residencial",
+                          "entidade assistencial",
+                          "escritório",
+                          "estabelecimento bancário",
+                          "estabelecimento comercial",
+                          "estabelecimento de ensino",
+                          "estabelecimento industrial",
+                          "estabelecimento prisional",
+                          "estacionamento com vigilância",
+                          "estacionamento particular",
+                          "estacionamento público",
+                          "estrada de ferro",
+                          "favela",
+                          "garagem coletiva de prédio",
+                          "garagem ou abrigo de residência",
+                          "hospedagem",
+                          "internet",
+                          "lazer e recreação",
+                          "local clandestino/ilegal",
+                          "não informado",
+                          "outros",
+                          "repartição pública",
+                          "residência",
+                          "restaurante e afins",
+                          "rodovia/estrada",
+                          "saúde",
+                          "serviços e bens públicos",
+                          "shopping center",
+                          "sindicato",
+                          "templo e afins",
+                          "terminal/estação",
+                          "unidade rural",
+                          "veículo em movimento",
+                          "via pública"
+                        ),
+                        options = list(
+                          `actions-box` = TRUE), 
+                        multiple = TRUE
+                      ),
+                      
+                      actionButton("aplicar","Modificar os dados"),
+                      actionButton("reset","Não usar Filtro"))  
 
 
 Side_rouc <-  fluidPage(
@@ -1402,9 +889,562 @@ vetor_interesse <- c("nome_dp_circ", "causa_morte_ocorr", "conclusao_ocorr", "id
                      "coorp_situacao_ocorr", "descricao_conduta_ocorr",
                      "natureza_apurada_ocorr")
 
-# Criar um dicionário
+
 dicionario <- setNames(gsub("_", " ", gsub("ocorr", "", trimws(vetor_interesse))), vetor_interesse)
 
+dicionario2 <- tibble(
+  "Homicídio" = c('2017/01','2022/12'),
+  "Feminicídio" = c('2015/04','2022/12'),
+  "Latrocínio" = c('2018/01','2022/12'),
+  "Lesão Corporal Seguida de Morte" = c('2016/09', '2022/12'),
+  "Morte Decorrente de Intervenção Policial" =  c('2013/01', '2022/12'),
+  "Morte Suspeita" = c('2013/01', '2022/12'),
+  "Roubo de Celular" = c('2010/01', '2022/12'),
+  "Roubo de Veículo" = c('2003/01' , '2022/12'),
+  "Furto de Celular" = c('2010/01', '2022/12'),
+  "Furto de Veículo" = c('2003/01' , '2022/12'),
+  "IML (Instituto Médico Legal)" = c('2013/01', '2022/12'),
+  "Dados Criminais" = c('2022/01' , '2022/12')
+)
+
+aplicarEstilosAoGrafico <- function(graficoId) {
+  runjs(sprintf('
+    var graficoDiv = document.getElementById("%s");
+    graficoDiv.style.borderRadius = "50px";  // ou qualquer valor desejado
+    graficoDiv.style.boxShadow = "8px 8px 16px #888888";
+  ', graficoId))
+}
+
+get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
+  
+  dados_filtrados = dados %>% select({{coluna}})
+  
+  return(dados_filtrados %>% ACF(lag_max = lag_max,type = tipo))
+}
+
+dados_filtrados_tempo <- function(dados, granularidade = "ano",base) {
+  filtro_1 <- dicionario2 %>% select({{base}}) %>% slice(1) %>% pull() %>% yearmonth()
+  filtro_2 <-  dicionario2 %>% select({{base}}) %>% slice(2) %>% pull() %>% yearmonth()
+  
+  data <- dados %>% 
+    filter(data_bo_reg != -1) %>% 
+    mutate(data_bo_reg = ymd(data_bo_reg)) %>%  
+    filter(yearmonth(data_bo_reg) >= filtro_1) %>% 
+    filter(yearmonth(data_bo_reg) <= filtro_2)
+  
+  if(granularidade == "sem"){
+    semestre_data = data %>%  select(data_bo_reg) %>% map( ~ semester(.x, with_year  = TRUE)) %>% unlist() %>% yearmon() %>% yearmonth()
+    serie_semestre <- data %>% mutate(granularidade = semestre_data) %>%  group_by(granularidade)%>% summarise( total = n())
+    
+    invervalo_semestre = new_interval(month = 6)
+    
+    
+    serie <-
+      serie_semestre %>%
+      build_tsibble(
+        index = granularidade,
+        interval = invervalo_semestre
+      ) 
+    
+    
+    
+  }else{
+    index_col <- switch(granularidade,
+                        "ano" = year(data$data_bo_reg),
+                        "tri" = yearquarter(data$data_bo_reg),
+                        "mes" = yearmonth(data$data_bo_reg),
+                        "semana" = yearweek(data$data_bo_reg)
+    )
+    
+    serie <- data %>% 
+      select(data_bo_reg) %>% 
+      mutate(granularidade = index_col) %>% 
+      group_by(granularidade) %>% 
+      summarise(total = n()) %>% 
+      as_tsibble(index = granularidade)
+  }
+  
+  colnames(serie)[2] <- "total"
+  serie <- serie %>% fill_gaps() %>% replace_na(list(total= 0))
+  
+  return(serie)
+}
+
+
+
+
+########################
+
+get_transformacoes <- function(series_temporal, var = "total") {
+  if(var == "box_cox"){
+    lambda <- series_temporal %>% 
+      features(total, features = guerrero)  %>% 
+      pull(lambda_guerrero)}
+  
+  series_temporal <- series_temporal %>%
+    mutate(log = if (var == "log") log(total) else NULL,
+           sqrt = if (var == "sqrt") sqrt(total) else NULL,
+           inversa = if (var == "inversa") 1/total else NULL,
+           box_cox = if (var == "box_cox") box_cox(total, lambda) else NULL)
+  if (var != "total"){
+    series_temporal <- series_temporal[,-2]}
+  
+  return(series_temporal)
+}
+
+
+
+
+
+diff <- function(serie,lag_ , dif){
+  serie_modificada = serie %>% mutate(transformacao = difference(!!sym(colnames(serie)[2]), lag = lag_ , differences = dif))
+  if(colnames(serie_modificada)[2] == "transformacao"){
+    return(serie_modificada)}
+  else{
+    return(serie_modificada %>% select(-2))}
+}
+
+
+
+
+#####
+teste_adf <- function(serie_temporal,var){
+  adf_test  =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% adf.test()
+  print(adf_test)
+  
+}
+
+teste_kpss <- function(serie_temporal,var){
+  serie_temporal %>% features({{var}}, unitroot_kpss) }
+
+teste_kpss_numero_diff <- function(serie_temporal,var){
+  serie_temporal %>% features({{var}}, unitroot_ndiffs ) }
+
+
+teste_kpss_season_diff <- function(serie_temporal,var){
+  serie_temporal %>% features({{var}}, unitroot_nsdiffs ) }
+
+
+
+teste_cox_stuart <- function(serie_temporal,var){
+  cox_stuart =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% cs.test()
+  print(cox_stuart)
+  
+}
+
+teste_kendall<- function(serie_temporal,var){
+  kendall =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% mk.test()
+  print(kendall)
+  
+}
+
+
+teste_WAVK <- function(serie_temporal,var){
+  serie =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) 
+  
+  WAVK = notrend_test(serie, test = "WAVK", factor.length = "adaptive.selection")
+  
+  print(WAVK)}
+
+teste_seasonal <- function(serie_temporal,var  ,teste = "combined"){
+  frequencia  = serie_temporal %>% pull(granularidade) %>% guess_frequency()
+  sesonal =  serie_temporal %>%   select({{var}}) %>% filter(!is.na({{var}})) %>% pull({{var}}) %>% isSeasonal(test = teste,freq = frequencia)
+  print(sesonal)}
+
+
+####
+#teste <- dados_filtrados_tempo(homicidioDoloso_parcial, "mes")
+#teste
+#teste2 <- teste_kpss(teste, total)
+#teste2
+#
+#teste3 <- teste_kpss_numero_diff(teste, total)
+#teste3
+#
+#
+#teste4 <- teste_kpss_season_diff(teste, total)
+#teste4
+#
+#teste5 <- teste_cox_stuart(teste,total)
+#teste5
+#
+#teste6 <- teste_kendall(teste,total)
+#
+#teste7<- teste_WAVK(teste,total)
+#teste7
+#
+#teste8<- teste_seasonal(teste,total)
+
+
+
+
+get_acf_sig <- function(serie_temporal, ci  = 0.95,var){
+  lag_max = serie_temporal %>% pull(total) %>% length()
+  
+  ci = qnorm((1+0.95)/2)/sqrt(lag_max) # calcula o intervalo de confiança
+  
+  # autocorrelacao
+  not_sig = !get_acf(serie_temporal,lag_max,var) %>% pull(acf) %>% between(-ci,ci) # calcula quem passou do intervalo de confiança
+  sequencia = rle(not_sig) # faz o Run-length encoding (RLE) do vetor not_sig calcula o tamanho das sequencias de true e false
+  
+  #candidatos_MA = cumsum(sequencia$lengths)  %>% tibble() %>% slice( which(sequencia$values == TRUE) ) %>% pull() # candidatos 
+  
+  # autocorrelacao parcial
+  
+  not_sig_partial =  !get_acf(serie_temporal,lag_max,var,"partial") %>% pull(acf) %>% between(-ci,ci)
+  sequencia_partial = rle(not_sig_partial) 
+  
+  #candidatos_AR = cumsum(sequencia_partial$lengths)  %>% tibble() %>% slice( which(sequencia_partial$values == TRUE) ) %>% pull()
+  
+  
+  # suguestão para o user
+  if(length(sequencia$lengths) == 2){
+    modelo = glue('MA{sequencia$lengths[1]}')
+    p = 0
+    q = sequencia$lengths[1]
+    
+  } else if(length(sequencia_partial$lengths) == 2){
+    modelo = glue('AR{sequencia_partial$lengths[1]}')
+    q = 0
+    p = sequencia$lengths[1]
+    
+  }else if(length(sequencia$lengths) >= 2 | length(sequencia_partial$lengths) >= 2){
+    
+    modelo = glue('ARMA({sequencia_partial$lengths[1]},{sequencia$lengths[1]})')
+    q = sequencia$lengths[1]
+    p = sequencia_partial$lengths[1]
+  } else{ modelo = 'não foi possível selecionar um modelo'}
+  
+  # ajuste o modelo
+  
+  formula = as.formula(glue('{var} ~  0 + pdq({p},0,{q}) + PDQ(0,0,0)'))
+  formula_arima = as.formula(glue('{var} ~  0 + PDQ(0,0,0)'))
+  formula_PQD= as.formula(glue('{var} ~  0'))
+  
+  
+  fit <- serie_temporal %>% 
+    model(modelo_sugerido = ARIMA(formula),
+          modelo_arima = ARIMA(formula_arima, stepwise = FALSE),
+          modelo_arima_default = ARIMA(formula_PQD, stepwise = FALSE))
+  
+  
+  
+  return(fit)
+  
+  
+}
+
+
+plot_raiz <- function(fit,modelo){
+  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_arma() + theme_pubclean() + ggtitle(glue('{modelo}')) + theme(plot.title = element_text(hjust = 0.5))
+  return(plot)
+  
+}
+
+
+
+plot_res <- function(fit,modelo){
+  plot  = fit %>% select({{modelo}}) %>% pull() %>% gg_tsresiduals() + ggtitle(glue('{modelo}'))
+  return(plot)
+  
+  
+}
+
+
+
+plot_predicao <- function(fit,modelo,h,serie){
+  fit %>% select({{modelo}}) %>%  pull() %>% forecast::forecast(h = {{h}}) %>% autoplot(serie) +  theme_pubclean()
+}
+
+
+
+plot_report <- function(fit,modelo){
+  fit %>% select({{modelo}}) %>% pull() %>% report() 
+}
+
+
+teste_ljung_box <- function(objeto_fit,modelo){
+  modelo_selecionado <- objeto_fit %>% select({{modelo}}) %>% pull() %>% pull()
+  p = modelo_selecionado[[1]]$fit$spec$p
+  q = modelo_selecionado[[1]]$fit$spec$q
+  P = modelo_selecionado[[1]]$fit$spec$P
+  Q = modelo_selecionado[[1]]$fit$spec$Q
+  freq = modelo_selecionado[[1]]$fit$spec$period
+  df = p +q + P + Q
+  objeto_fit %>% select({{modelo}}) %>% pull() %>% augment() %>% features(.innov, ljung_box, lag = 2*freq, dof = df)
+  
+  
+  
+}
+
+
+
+######
+
+
+
+get_pqd <- function(serie_temporal,d,ci  = 0.95){
+  # intervalo de conf
+  
+  lag_max = serie_temporal %>% pull(transformacao) %>% length()
+  if (d != 0){
+    serie_temporal <- serie_temporal %>% mutate(transformacao = difference(transformacao, lag = 1 , differences = d))
+  }
+  
+  ci = qnorm((1+0.95)/2)/sqrt(lag_max) 
+  
+  
+  # autocorrelacao
+  
+  acf = get_acf(serie_temporal,lag_max,"transformacao") %>% pull(acf)
+  not_sig = !acf %>%  between(-ci,ci) # calcula quem passou do intervalo de confiança
+  sequencia = rle(not_sig) 
+  q = sequencia$lengths[1]
+  acf_truncado_acf <- acf[q:length(acf)]
+  sinais_acf =  (acf_truncado_acf - lag(acf_truncado_acf))  %>% na.remove()
+  sinais_obs_acf <- sum(sinais_acf > 0)
+  p_valor_acf <- binom.test(sinais_obs_acf,length(sinais_acf))$p.value
+  
+  
+  
+  
+  # auto autocorrelacao parcial
+  pacf = get_acf(serie_temporal,lag_max,"transformacao", "partial") %>% pull(acf)
+  not_sig_partial =  !pacf %>% between(-ci,ci)
+  sequencia_partial = rle(not_sig_partial) 
+  p = sequencia_partial$lengths[1]
+  pacf_truncado_acf <- pacf[p:length(pacf)]
+  sinais_pacf =  (pacf_truncado_acf - lag(pacf_truncado_acf))  %>% na.remove()
+  sinais_obs_pacf <- sum(sinais_pacf > 0)
+  p_valor_pacf <- binom.test(sinais_obs_pacf,length(sinais_pacf))$p.value
+  
+  arma = (p > 0) & (q > 0)
+  if(arma){
+    truncar = abs(p - q)
+    pacf_truncado_arima <- pacf[truncar:length(pacf)]
+    
+    sinais_pacf_arima =  (pacf_truncado_arima - lag(pacf_truncado_arima))  %>% na.remove()
+    sinais_obs_pacf_arima <- sum(sinais_pacf_arima > 0)
+    p_valor_pacf_arima <- binom.test(sinais_obs_pacf_arima,length(sinais_pacf_arima))$p.value
+    
+    
+    acf_truncado_arima <- acf[truncar:length(acf)]
+    sinais_acf_arima =  (acf_truncado_arima - lag(acf_truncado_arima))  %>% na.remove()
+    sinais_obs_acf_arima <- sum(sinais_acf_arima > 0)
+    p_valor_acf_arima <- binom.test(sinais_obs_acf_arima,length(sinais_acf_arima))$p.value
+  }
+  
+  
+  
+  
+  
+  
+  # medias moveis
+  if ((which(sequencia$values)[1] == 1) & (p_valor_pacf > 0.05) & !arma) {
+    p = 0
+    modelo = glue('pdq(0,{d},{q})')
+  } else if ((which(sequencia_partial$values)[1] == 1) & (p_valor_acf > 0.05) & !arma) {
+    q = 0
+    modelo = glue('pdq({p},{d},0)')
+  } else if (arma & (p_valor_pacf_arima > 0.05)) {
+    modelo = glue('pdq({p},{d},{q})')
+  } else {
+    modelo = 'Não é possível encontrar um modelo'
+  }
+  
+  ruido_branco = (p == 0) & (q==0)
+  return(list('modelo' = modelo,
+              'ruido_branco' = ruido_branco))
+  
+}
+
+
+
+
+
+
+
+
+
+get_transformacoes_modelo <- function(serie,tipo_transformacao = "identidade"){
+  if(tipo_transformacao == "box_cox"){lambda = serie %>% features(!!sym(colnames(serie)[2]), features = guerrero) %>% pull(lambda_guerrero)}
+  serie_modificada = switch(tipo_transformacao,
+                            
+                            identidade = {
+                              serie %>%
+                                mutate(transformacao = !!sym(colnames(serie)[2]))
+                            },
+                            
+                            
+                            log = {
+                              serie %>%
+                                mutate(transformacao = log(!!sym(colnames(serie)[2])))
+                            },
+                            sqrt = {
+                              serie %>%
+                                mutate(transformacao = sqrt(!!sym(colnames(serie)[2])))
+                            },
+                            inversa = {
+                              serie %>%
+                                mutate(transformacao = 1/!!sym(colnames(serie)[2]))
+                            },
+                            box_cox = {
+                              serie %>%
+                                mutate(transformacao = box_cox(!!sym(colnames(serie)[2]), lambda))
+                            },
+  )
+  return(serie_modificada)      
+}
+
+
+
+
+#<ARIMA(0,1,1)(1,0,1)[12]>
+#PDQ
+
+
+fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , seasonal_dif = '0:1' ,p = '0:5',q = '0:5',P = '0:2',Q = '0:2',lag_seasonal_dif = "automatico",modelos){
+  serie_modificada = get_transformacoes_modelo(serie,tipo_transformacao)
+  
+  
+  pqd_modelo_sugerido =  get_pqd(serie_modificada,d=d)['modelo']
+  if(pqd_modelo_sugerido['ruido_branco'] == "Verifique se a série é ruído branco")
+  {return("oi")}
+  
+  else{
+    
+    
+    
+    if(lag_seasonal_dif == "automatico"){lag_seasonal_dif =  serie_modificada %>% pull(granularidade) %>% guess_frequency() %>% floor() }
+    
+    
+    
+    # Ajuste dos modelos
+    
+    string_transformacao = switch(tipo_transformacao,
+                                  identidade = 'total',
+                                  box_cox = glue('box_cox(total, {lambda})'),
+                                  sqrt = 'sqrt(total)',
+                                  inversa = '1/total',
+                                  log = 'log(total)')
+    
+    #usuario
+    
+    PQD = ifelse(seasonal_dif == 0,'PDQ(0,0,0)', glue('PDQ({P},{seasonal_dif},{Q}, period = {lag_seasonal_dif})'))
+    string_modelo_usuario= glue('0 + pdq({p},{dif},{q}) + {PQD}')
+    formula_usuario = as.formula(paste(string_transformacao,'~',string_modelo_usuario))
+    
+    
+    # modelo sugerido
+    
+    string_modelo_sugerido = glue('0 + {pqd_modelo_sugerido} + PDQ(0,0,0)')
+    formula_modelo_sugerido = as.formula(paste(string_transformacao,'~',string_modelo_sugerido))
+    
+    
+    # SARIMA
+    
+    formula_SARIMA = as.formula(glue('{string_transformacao} ~ 0'))
+    
+    
+    # ARMA
+    string_modelo_ARMA = glue('0 + pdq(1:5,0,1:5) + PDQ(0,0,0)')
+    formula_modelo_ARMA= as.formula(paste(string_transformacao,'~',string_modelo_ARMA))
+    
+    # ARIMA
+    
+    string_modelo_ARIMA = glue('0 + pdq(1:5,1:2,1:5) + PDQ(0,0,0)')
+    formula_modelo_ARIMA= as.formula(paste(string_transformacao,'~',string_modelo_ARIMA))
+    
+    
+    fit_ARMA<- if ('arma' %in% modelos) {
+      serie %>%
+        model(arma = ARIMA(formula_modelo_ARMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    fit_ARIMA<- if ('arima' %in% modelos) {
+      
+      serie %>%
+        model(arima = ARIMA(formula_modelo_ARIMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    
+    
+    fit_usuario <- if ('usuario' %in% modelos) {
+      serie %>%
+        model(usuario = ARIMA(formula_usuario, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    fit_ingenuo <- if ('modelo_pia' %in% modelos & pqd_modelo_sugerido != "Não é possível encontrar um modelo") {
+      serie %>%
+        model(modelo_pia = ARIMA(formula_modelo_sugerido, stepwise = FALSE))
+    } else if ('modelo_pia' %in% modelos & pqd_modelo_sugerido == "Não é possível encontrar um modelo") {
+      'Não foi possível encontrar um modelo'
+    } else if (!('modelo_pia' %in% modelos)) {
+      NA
+    }
+    
+    fit_AUTO_sarima <- if ('auto_sarima' %in% modelos) {
+      serie %>%
+        model(auto_sarima = ARIMA(formula_SARIMA, stepwise = FALSE))
+    } else {
+      NA
+    }
+    
+    
+    
+    
+    fit = tibble(
+      usuario = fit_usuario,
+      modelo_pia = fit_ingenuo,
+      arma = fit_ARMA,
+      auto_sarima = fit_AUTO_sarima,
+      arima = fit_ARIMA,
+      
+      .name_repair = c('minimal')
+    )
+    
+    # para o relatório
+    fit <- fit %>% select(!where(is.na))
+    
+    return(fit)
+    
+    
+    # para o relatorio
+    
+  }
+  
+  
+}
+
+ruido_branco_func <- function(serie_temporal,ci = 0.95){
+  
+  lag_max = serie_temporal %>% pull(!!sym(colnames(serie_temporal)[2])) %>% length()
+  ci = qnorm((1+0.95)/2)/sqrt(lag_max)
+  acf = get_acf(serie_temporal,lag_max,colnames(serie_temporal)[2]) %>% pull(acf)
+  
+  not_sig = !acf %>%  between(-ci,ci) 
+  
+  
+  ruido_branco = (TRUE %in% not_sig)
+  
+  
+  return(!ruido_branco)
+}
+
+shapiro_test <- function(objeto_fit,modelo){
+  objeto_fit %>% select({{modelo}}) %>% pull() %>%  augment() %>% pull(.innov) %>% shapiro.test()
+}
+
+check_model_2 <- function(objeto_fit,modelo){
+  nulo <- objeto_fit %>% select({{modelo}}) %>% pull() %>% pull()
+  return(class(nulo[[1]]$fit) == "null_mdl")
+}
 
 
 # Ui
@@ -1844,24 +1884,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$button1, {
     estado("consulta")
-    # if (!modal_state()) {
-    #   # Cria o conteúdo do modal
-    #   modalContent <- modalDialog(
-    #     title = "Aviso!",
-    #     "Modificações dos dados serão propagados para todas as análises.
-    #   Para retornar e utilizar os dados originais clique em *Não usar Filtro ",
-    #     footer = tagList(
-    #       actionButton("close_popup", "Fechar")
-    #     )
-    #   )
-    #   
-    #   
-    #   showModal(modalContent)
-    #   
-    #   
-    #   modal_state(TRUE)
-    
-    
     shinyalert(
       title = "Aviso!",
       text = "Modificações dos dados serão propagados para todas as análises.
@@ -1999,7 +2021,6 @@ server <- function(input, output, session) {
             
             if (is.null(dado12())) {
               showNotification("Carregando os dados. Aguarde!",type = "message",duration = 10)
-              showNotification()
               dado12(fread("furtoVeiculo_parcial.csv"))
               dado12(  dado12() %>%
                          mutate(data_bo_reg = as.Date(datahora_bo_reg),
@@ -2043,11 +2064,12 @@ server <- function(input, output, session) {
             
             dado_real(dado5())
             
-            fluidRow(
-              HTML("
+            box(width = NULL,
+                fluidPage(
+                  HTML("
                   <p>A morte decorrente de intervenção policial é um crime militar impróprio, tipificado no artigo 205 artigo 9º, inciso II, alínea b da Constituição Federal de 1988, caracterizado pelos abusos cometidos pelas forças policiais.</p>
                   <p>A base traz boletins de ocorrência tangentes ao crime, com dados indo de a .</p>
-                ")  )
+                ")  ) )
           }
           
           
@@ -2087,10 +2109,11 @@ server <- function(input, output, session) {
             
             dado_real(dado8())
             
-            fluidRow(
-              HTML("Contém todos os dados de boletins de ocorrência, dos temas presentes, do ano de 2022.")  )
-            
-            
+            box(width = NULL,
+                fluidPage(
+                  HTML("Contém todos os dados de boletins de ocorrência, dos temas presentes, do ano de 2022.")  )
+                
+            )
           }
           
           else if (tema() == "Roubo de Celular") {
@@ -2612,7 +2635,8 @@ server <- function(input, output, session) {
                                                  numericInput("lag_pred","Horizonte", value = 12, min = 0, max = 52))),
                                       box(width = NULL,
                                           title = "Testes",
-                                          div(tags$ul(tags$li(actionLink("test7","Ljung Box"))))),
+                                          div(tags$ul(tags$li(actionLink("test7","Ljung Box")),
+                                                      tags$li(actionLink("test8","Shapiro wilk"))))),
                                       
                                       box(width = NULL, title = "Relatório",
                                           div(tags$ul(tags$li(
@@ -3226,7 +3250,8 @@ server <- function(input, output, session) {
   ################################################################################################      
   Serie_Atual <- reactive({
     if(!is.null(Serie_Tempo()) && !is.null(Serie_Transformacao())){
-      serie <- dados_filtrados_tempo(dado_filtrado(),Serie_Tempo())
+      serie <- dados_filtrados_tempo(dado_filtrado(),Serie_Tempo(),tema())
+      
       if(nrow(serie) <=1){
         shinyalert("Poucas observações",text ="Dados insuficientes para a construção da série temporal com esse período de tempo")
       }else{
@@ -3248,7 +3273,9 @@ server <- function(input, output, session) {
           serie <- diff(serie,lag2,ordem2)
         }
         
+        colnames(serie)[2] <- "total"
         
+        serie <- serie %>% fill_gaps() %>% replace_na(list(total= 0))
         
         serie
       }}
@@ -3275,16 +3302,26 @@ server <- function(input, output, session) {
   
   
   output$cont2 <- renderPlotly({
-    
-    Graph <- NULL
-    
-    Graph <- Serie_Atual() %>% gg_season(y = !!sym(colnames(Serie_Atual())[2]), labels = "none") + xlab(paste(Graph_Tempo())) + theme_pubclean()
-    
-    plotly_chart <- ggplotly(Graph)
-    
-    plotly_chart <- plotly_chart %>% layout(height = 600)
-    
-    plotly_chart
+    tempo <- input$cont_filtro
+    if (tempo == "anual"){
+      shinyalert(text="Para visualizar o gráfico, é necessário uma granularidade inferior a anual.")
+      Graph <- NULL
+      Graph
+    }else{
+      
+      Serie <- Serie_Atual()
+      
+      colnames(Serie)[2] <- "total"
+      
+      Graph <- NULL
+      
+      Graph <- Serie %>% fill_gaps() %>% replace_na(list(total= 0)) %>%  gg_season() + xlab(paste(Graph_Tempo())) + theme_pubclean()
+      
+      plotly_chart <- ggplotly(Graph)
+      
+      plotly_chart <- plotly_chart %>% layout(height = 600)
+      
+      plotly_chart}
   })
   
   output$cont3 <- renderPlotly({
@@ -3368,10 +3405,7 @@ server <- function(input, output, session) {
   observeEvent(input$test7,{
     if (is.null(fit())){
       showNotification("Nenhum modelo gerado",type = "error")
-    }else if(fit() == 123){
-      showNotification("Nenhum modelo gerado",type = "error")
-    }
-    else{
+    }else{
       fit <- fit()
       
       resultado_summary <- teste_ljung_box(fit,input$model)
@@ -3380,6 +3414,35 @@ server <- function(input, output, session) {
       
       modalContent <- modalDialog(
         title = "Teste Ljung Box",
+        verbatimTextOutput("summary_output"),  # Exibindo o texto do summary
+        footer = tagList(
+          actionButton("close_popup", "Fechar")
+        )
+      )
+      
+      
+      output$summary_output <- renderPrint({
+        cat(texto_summary, sep = "\n")
+      })
+      
+      showModal(modalContent)
+      
+      modal_state(TRUE)}
+  })
+  
+  
+  observeEvent(input$test8,{
+    if (is.null(fit())){
+      showNotification("Nenhum modelo gerado",type = "error")
+    }else{
+      fit <- fit()
+      
+      resultado_summary <- shapiro_test(fit,input$model)
+      
+      texto_summary <- capture.output(print(resultado_summary))
+      
+      modalContent <- modalDialog(
+        title = "Teste Shapiro wilk",
         verbatimTextOutput("summary_output"),  # Exibindo o texto do summary
         footer = tagList(
           actionButton("close_popup", "Fechar")
@@ -3557,64 +3620,108 @@ server <- function(input, output, session) {
   
   
   
-  observeEvent(input$sugerido,{ 
-    showNotification("Geração de modelos iniciada",type = "warning")
+  observeEvent(input$sugerido,{
     
     SERIE <- armazem_serie_original()
     
-    vetor2 <- c()
+    teste <- ruido_branco_func(SERIE)
     
-    modelo_usuario <- input$Modelo_Usuario
-    
-    modelo_ingenuo <- input$Modelo_Ingenuo
-    
-    modelo_sarima <- input$Modelo_Sarima
-    
-    modelo_arma <- input$Modelo_Arma
-    
-    modelo_arima <- input$Modelo_Arima
-    
-    if (modelo_usuario){
-      vetor2 <- append(vetor2,"usuario")
-    }
-    
-    if (modelo_ingenuo){
-      vetor2 <- append(vetor2,"modelo_pia")
-    }
-    
-    if (modelo_sarima){
-      vetor2 <- append(vetor2,"auto_sarima")
-    }
-    
-    if (modelo_arma){
-      vetor2 <- append(vetor2,"arma")
-    }
-    
-    if (modelo_arima){
-      vetor2 <- append(vetor2,"arima")
-    }
-    
-    fit(fit_serie(SERIE,tipo_transformacao = armazem_transformacao(),d = input$serie_ordem,
-                  dif = paste0(input$dzin[1],":",input$dzin[2]),  seasonal_dif = paste0(input$dzao[1],":",input$dzao[2]),
-                  p = paste0(input$pzin[1],":",input$pzin[2]), P = paste0(input$pzao[1],":",input$pzao[2]),
-                  q = paste0(input$qzin[1],":",input$qzin[2]), Q = paste0(input$qzao[1],":",input$qzao[2]),
-                  lag_seasonal_dif = armazem_lag2(),modelos = vetor2))
-    if (fit() == 123){
-      shinyalert(title = "Interrupção",text = "Verifique se a série é ruído branco!")
-      showNotification("Geração de modelos interrompida",type = "message")
+    if (teste){
+      shinyalert(title="Alerta",text = "A série é ruído branco, não é possível gerar modelos"
+                 ,type = "warning", confirmButtonCol = "#11104d")
     }else{
+      
+      showNotification("Geração de modelos iniciada",type = "warning")
+      
+      vetor2 <- c()
+      
+      modelo_usuario <- input$Modelo_Usuario
+      
+      modelo_ingenuo <- input$Modelo_Ingenuo
+      
+      modelo_sarima <- input$Modelo_Sarima
+      
+      modelo_arma <- input$Modelo_Arma
+      
+      modelo_arima <- input$Modelo_Arima
+      
+      if (modelo_usuario){
+        vetor2 <- append(vetor2,"usuario")
+      }
+      
+      if (modelo_ingenuo){
+        vetor2 <- append(vetor2,"modelo_pia")
+      }
+      
+      if (modelo_sarima){
+        vetor2 <- append(vetor2,"auto_sarima")
+      }
+      
+      if (modelo_arma){
+        vetor2 <- append(vetor2,"arma")
+      }
+      
+      if (modelo_arima){
+        vetor2 <- append(vetor2,"arima")
+      }
+      
+      fit(fit_serie(SERIE,tipo_transformacao = armazem_transformacao(),d = input$serie_ordem,
+                    dif = paste0(input$dzin[1],":",input$dzin[2]),  seasonal_dif = paste0(input$dzao[1],":",input$dzao[2]),
+                    p = paste0(input$pzin[1],":",input$pzin[2]), P = paste0(input$pzao[1],":",input$pzao[2]),
+                    q = paste0(input$qzin[1],":",input$qzin[2]), Q = paste0(input$qzao[1],":",input$qzao[2]),
+                    lag_seasonal_dif = armazem_lag2(),modelos = vetor2))
+      
+      if (modelo_usuario){
+        valid <- check_model_2(fit(),"usuario")
+        if(valid){
+          vetor2 <- setdiff(vetor2,"usuario")
+          showNotification("Não foi possível ajustar o modelo usuario",type = "error")
+        }
+      }
+      
+      if (modelo_ingenuo){
+        valid <- check_model_2(fit(),"modelo_pia")
+        if(valid){
+          vetor2 <- setdiff(vetor2,"modelo_pia")
+          showNotification("Não foi possível ajustar o modelo modelo_pia",type = "error")
+        }
+      }
+      
+      if (modelo_sarima){
+        valid <- check_model_2(fit(),"auto_sarima")
+        if(valid){
+          vetor2 <- setdiff(vetor2,"auto_sarima")
+          showNotification("Não foi possível ajustar o modelo auto_sarima",type = "error")
+        }
+      }
+      
+      if (modelo_arma){
+        valid <- check_model_2(fit(),"arma")
+        if(valid){
+          vetor2 <- setdiff(vetor2,"arma")
+          showNotification("Não foi possível ajustar o modelo arma",type = "error")
+        }
+      }
+      
+      if (modelo_arima){
+        valid <- check_model_2(fit(),"arima")
+        if(valid){
+          vetor2 <- setdiff(vetor2,"arima")
+          showNotification("Não foi possível ajustar o modelo arima",type = "error")
+        }
+      }
+      
       
       updatePickerInput(session,"model",choices = vetor2)
       
       showNotification("Geração de modelos finalizada",type = "message")}
+    
   })
   
   
   output$summary2 <- renderPrint({
     if (is.null(fit())){
       "Nenhum modelo gerado!"
-    }else if(fit() == 123){
-      h3("Nenhum modelo gerado!")
     }else{
       fit()
     }
@@ -3623,8 +3730,6 @@ server <- function(input, output, session) {
   
   output$plot1 <- renderPlot({
     if (is.null(fit()) ){
-      h3("Nenhum modelo gerado!")
-    }else if(fit() == 123){
       h3("Nenhum modelo gerado!")
     }else{
       plot_raiz <- plot_raiz(fit(),input$model)
@@ -3636,8 +3741,6 @@ server <- function(input, output, session) {
   output$plot2 <- renderPlot({
     if (is.null(fit())){
       print("Nenhum modelo gerado!")
-    }else if(fit() == 123){
-      h3("Nenhum modelo gerado!")
     }else{
       plot_res <- plot_res(fit(),input$model)
       
@@ -3647,8 +3750,6 @@ server <- function(input, output, session) {
   output$plot3 <- renderPlot({
     if (is.null(fit())){
       "Nenhum modelo gerado!"
-    }else if(fit() == 123){
-      h3("Nenhum modelo gerado!")
     }else{
       serie <- armazem_serie_original()
       plot_pred <- plot_predicao(fit(),input$model,input$lag_pred,serie)
@@ -3659,8 +3760,6 @@ server <- function(input, output, session) {
   output$plot4 <- renderPrint({
     if (is.null(fit())){
       "Nenhum modelo gerado!"
-    }else if(fit() == 123){
-      h3("Nenhum modelo gerado!")
     }else{
       plot_report <-  plot_report(fit(),input$model) 
       
@@ -3735,6 +3834,5 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui, server)
-
 
 
