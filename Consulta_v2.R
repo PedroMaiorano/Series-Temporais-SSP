@@ -13,13 +13,15 @@ get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
   return(dados_filtrados %>% ACF(lag_max = lag_max,type = tipo))
 }
 
-
-dados_filtrados_tempo <- function(dados, granularidade = "ano") {
+dados_filtrados_tempo <- function(dados, granularidade = "ano",base) {
+  filtro_1 <- dicionario2 %>% select({{base}}) %>% slice(1) %>% pull() %>% yearmonth()
+  filtro_2 <-  dicionario2 %>% select({{base}}) %>% slice(2) %>% pull() %>% yearmonth()
+  
   data <- dados %>% 
     filter(data_bo_reg != -1) %>% 
     mutate(data_bo_reg = ymd(data_bo_reg)) %>%  
-    filter(year(data_bo_reg) >= 2003) %>% 
-    filter(year(data_bo_reg) <= 2022)
+    filter(yearmonth(data_bo_reg) >= filtro_1) %>% 
+    filter(yearmonth(data_bo_reg) <= filtro_2)
   
   if(granularidade == "sem"){
     semestre_data = data %>%  select(data_bo_reg) %>% map( ~ semester(.x, with_year  = TRUE)) %>% unlist() %>% yearmon() %>% yearmonth()
@@ -52,6 +54,10 @@ dados_filtrados_tempo <- function(dados, granularidade = "ano") {
       summarise(total = n()) %>% 
       as_tsibble(index = granularidade)
   }
+  
+  colnames(serie)[2] <- "total"
+  serie <- serie %>% fill_gaps() %>% replace_na(list(total= 0))
+  
   return(serie)
 }
 
@@ -394,7 +400,7 @@ fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , se
   
   pqd_modelo_sugerido =  get_pqd(serie_modificada,d=d)['modelo']
   if(pqd_modelo_sugerido['ruido_branco'] == "Verifique se a série é ruído branco")
-  {return(123)}
+  {return("oi")}
   
   else{
     
@@ -505,6 +511,28 @@ fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , se
   }
   
   
+  }
+
+ruido_branco_func <- function(serie_temporal,ci = 0.95){
+  
+  lag_max = serie_temporal %>% pull(!!sym(colnames(serie_temporal)[2])) %>% length()
+  ci = qnorm((1+0.95)/2)/sqrt(lag_max)
+  acf = get_acf(serie_temporal,lag_max,colnames(serie_temporal)[2]) %>% pull(acf)
+  
+  not_sig = !acf %>%  between(-ci,ci) 
+  
+  
+  ruido_branco = (TRUE %in% not_sig)
+  
+  
+  return(!ruido_branco)
 }
 
+shapiro_test <- function(objeto_fit,modelo){
+  objeto_fit %>% select({{modelo}}) %>% pull() %>%  augment() %>% pull(.innov) %>% shapiro.test()
+}
 
+check_model_2 <- function(objeto_fit,modelo){
+  nulo <- objeto_fit %>% select({{modelo}}) %>% pull() %>% pull()
+  return(class(nulo[[1]]$fit) == "null_mdl")
+}
