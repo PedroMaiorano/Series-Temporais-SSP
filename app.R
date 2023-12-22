@@ -904,10 +904,7 @@ aplicarEstilosAoGrafico <- function(graficoId) {
   ', graficoId))
 }
 
-get_acf <- function(dados, coluna, tipo = "correlation"){
-  colnames(dados)[2] <- "total"
-  
-  lag_max = dados %>% pull(total) %>% length()
+get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
   
   dados_filtrados = dados %>% select({{coluna}})
   
