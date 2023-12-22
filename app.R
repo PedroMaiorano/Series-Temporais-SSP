@@ -46,6 +46,856 @@ plan(multisession)
 
 
 
+vetor <- c(
+  "id_bo"                  
+  ,"id_laudo"     
+  ,"datahora_iml_reg"         
+  ,"index"                  
+  ,"data_bo_reg"            
+  ,"id_dp_reg"                  
+  ,"data_ocorr"             
+  ,"hora_ocorr"              
+  ,"num_logradouro_ocorr"   
+  ,"latitude_ocorr"         
+  ,"longitude_ocorr"    
+  ,"datahora_inicio_bo"          
+  ,"datahora_bo_reg"     
+  ,"marca_veiculo"          
+  ,"cor_veiculo"            
+  ,"cidade_veiculo"         
+  ,"uf_veiculo"             
+  ,"ano_fab_veiculo"        
+  ,"ano_mod_veiculo"     
+  ,"V1"                  
+  ,"qtde_celular","marca_celular",
+  "logradouro_ocorr")
+
+
+
+# Vetor de interesse
+vetor_interesse <- c("nome_dp_circ", "causa_morte_ocorr", "conclusao_ocorr", "idade_vitima",
+                     "nome_dp_reg", "nome_municipio_circ", "nome_municipio_reg",
+                     "descricao_local_ocorr", "vitima_fatal_ocorr", "tipo_pessoa",
+                     "sexo_pessoa", "idade_pessoa", "cor_pele_pessoa", "profissao_pessoa",
+                     "autoria_bo", "solucao_bo", "bairro_ocorr", "cidade_ocorr",
+                     "flagrante_ocorr", "especie_ocorr", "status_ocorr", "desdobramento_ocorr",
+                     "natureza_jur_ocorr", "tipo_veiculo", "coorp_envolvida_ocorr",
+                     "coorp_situacao_ocorr", "descricao_conduta_ocorr",
+                     "natureza_apurada_ocorr")
+
+
+dicionario <- setNames(gsub("_", " ", gsub("ocorr", "", trimws(vetor_interesse))), vetor_interesse)
+
+dicionario2 <- tibble(
+  "Homicídio" = c('2017/01','2022/12'),
+  "Feminicídio" = c('2015/04','2022/12'),
+  "Latrocínio" = c('2018/01','2022/12'),
+  "Lesão Corporal Seguida de Morte" = c('2016/09', '2022/12'),
+  "Morte Decorrente de Intervenção Policial" =  c('2013/01', '2022/12'),
+  "Morte Suspeita" = c('2013/01', '2022/12'),
+  "Roubo de Celular" = c('2010/01', '2022/12'),
+  "Roubo de Veículo" = c('2003/01' , '2022/12'),
+  "Furto de Celular" = c('2010/01', '2022/12'),
+  "Furto de Veículo" = c('2003/01' , '2022/12'),
+  "IML (Instituto Médico Legal)" = c('2013/01', '2022/12'),
+  "Dados Criminais" = c('2022/01' , '2022/12')
+)
+
+
+j <- c("-1","0", "1", "2", "3", "4", "5",
+       "6", "7", "8", "9", "10", "11",
+       "12", "13", "14", "15", "16", "17",
+       "18", "19", "20", "21", "22", "23",
+       "24", "25", "26", "27", "28", "29",
+       "30", "31", "32", "33", "34", "35",
+       "36", "37", "38", "39", "40", "41",
+       "42", "43", "44", "45", "46", "47",
+       "48", "49", "50", "51", "52", "53",
+       "54", "56", "57", "58", "59", "60",
+       "61", "62", "63", "64", "65", "66",
+       "67", "68", "69", "70", "71", "72",
+       "73", "74", "75", "76", "77", "78",
+       "79", "80", "81", "84", "85", "86",
+       "87", "88", "89", "90", "91", "92",
+       "93", "95", "96", "98", "99", "100",
+       "101", "102", "103", "105", "106", "108",
+       "109", "110", "111", "112", "113", "116",
+       "117", "119", "120", "121", "122", "123",
+       "124", "125", "126", "129", "130", "131",
+       "132", "133", "135", "136", "137", "138",
+       "139", "140", "142", "146", "147", "150",
+       "152", "154", "156", "157", "159", "160",
+       "162", "165", "166", "169", "170", "171",
+       "173", "176", "178", "180", "181", "182",
+       "191", "195", "197", "198", "200", "203",
+       "206", "208", "210", "213", "214", "216",
+       "217", "218", "223", "240", "248", "249",
+       "250", "254", "255", "256", "258", "259",
+       "264", "265", "270", "274", "278", "280",
+       "282", "286", "288", "293", "300", "303",
+       "304", "310", "316", "319", "320", "340",
+       "360", "361", "364", "373", "399", "400",
+       "405", "417", "424", "426", "433", "470",
+       "480", "498", "500", "501", "522", "542",
+       "547", "560", "570", "600", "647", "649",
+       "651", "697", "699", "700", "710", "749",
+       "750", "798", "800", "860", "899", "900",
+       "961", "1000", "1006", "1007", "1011", "1080",
+       "1100", "1119", "1150", "1161", "1179", "1188",
+       "1270", "1353", "1354", "1355", "1357", "1359",
+       "1367", "1382", "1440", "1500", "1597", "1693",
+       "1783", "1815", "1818", "1845", "1918", "1941",
+       "1951", "1959", "1966", "1970", "1974", "1999",
+       "2000", "2240", "2996", "3500", "3531", "3581",
+       "4000", "4204", "6000", "9736", "9999", "17731",
+       "1353133", "1358692", "9999999", "99999999", "135401508"
+)
+
+
+l<- c("-1","0", "1", "2", "3", "4", "5", "6",
+      "7", "8", "9", "10", "11", "12", "13",
+      "14", "15", "16", "17", "18", "19", "20",
+      "21", "22", "23", "24", "25", "26", "27",
+      "28", "29", "30", "31", "32", "33", "34",
+      "35", "36", "37", "38", "39", "40", "41",
+      "42", "43", "44", "45", "46", "47", "48",
+      "49", "50", "51", "52", "53", "54", "55",
+      "56", "57", "58", "59", "60", "61", "62",
+      "63", "64", "65", "66", "67", "68", "69",
+      "70", "71", "72", "73", "74", "75", "76",
+      "77", "78", "79", "80", "81", "82", "83",
+      "84", "85", "87", "88", "89", "90", "91",
+      "92", "93", "94", "96", "97", "98", "99",
+      "100", "101", "102", "103", "104", "106", "107",
+      "109", "110", "111", "112", "113", "114", "115",
+      "116", "117", "118", "119", "120", "121", "123",
+      "124", "125", "126", "127", "128", "129", "130",
+      "131", "132", "133", "134", "135", "137", "138",
+      "140", "141", "142", "143", "144", "146", "148",
+      "149", "150", "152", "153", "155", "156", "157",
+      "159", "160", "162", "163", "166", "167", "168",
+      "170", "171", "174", "175", "176", "178", "179",
+      "180", "181", "182", "183", "184", "185", "186",
+      "189", "190", "191", "192", "193", "195", "196",
+      "198", "199", "200", "201", "204", "207", "210",
+      "212", "213", "218", "219", "220", "221", "222",
+      "226", "228", "229", "230", "231", "233", "239",
+      "240", "249", "250", "251", "253", "256", "257",
+      "258", "260", "264", "265", "266", "274", "280",
+      "291", "297", "298", "300", "301", "305", "308",
+      "309", "311", "314", "329", "330", "346", "348",
+      "350", "370", "376", "378", "380", "384", "424",
+      "433", "483", "486", "488", "492", "498", "499",
+      "500", "542", "547", "551", "557", "600", "612",
+      "621", "629", "660", "670", "672", "688", "700",
+      "720", "730", "750", "751", "768", "779", "785",
+      "799", "800", "804", "815", "850", "880", "899",
+      "930", "938", "949", "999", "1000", "1011", "1050",
+      "1080", "1100", "1111", "1115", "1117", "1119", "1145",
+      "1169", "1197", "1210", "1213", "1281", "1300", "1351",
+      "1353", "1354", "1355", "1358", "1404", "1470", "1500",
+      "1513", "1530", "1550", "1553", "1560", "1612", "1615",
+      "1650", "1654", "1665", "1677", "1679", "1707", "1729",
+      "1733", "1741", "1777", "1786", "1798", "1800", "1804",
+      "1808", "1819", "1854", "1867", "1871", "1880", "1883",
+      "1906", "1920", "1957", "1965", "1966", "1968", "1971",
+      "1980", "1981", "1989", "1990", "1996", "1999", "2000",
+      "2199", "2500", "2751", "2800", "2944", "3000", "3100",
+      "3465", "3551", "4400", "5000", "9413", "9579", "9675",
+      "9844", "9860", "9999", "168455", "14728864")
+
+
+
+Side_hom <- 
+  fluidPage(
+    #h3("Filtro dos dados"),
+    # br(),
+    dateRangeInput('dateRange2',
+                   label = "Filtrar por data",
+                   start = "2017-01-01", end = "2022-12-31",
+                   min = "2017-01-01", max = "2022-12-31",
+                   separator = " - ", format = "dd/mm/yy",
+                   startview = 'year', language = 'pt-BR', weekstart = 1
+    ),
+    pickerInput(
+      inputId = "cor_pele",
+      label = "Cor da pele", 
+      choices = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
+      selected = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE
+    ),
+    pickerInput(
+      inputId = "sexo",
+      label = "Sexo", 
+      choices = c("feminino","indefinido","masculino"),
+      selected = c("feminino","indefinido","masculino"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE
+    ),
+    sliderInput("idade_slider", "Filtrar por Idade:",
+                min = -1, max = 97, value = c(-1, 97)),
+    actionButton("aplicar","Modificar os dados"),
+    actionButton("reset","Não usar Filtro"))
+
+
+
+
+Side_fem <- 
+  fluidPage(
+    
+    
+    dateRangeInput('dateRange2',
+                   label = "Filtrar por data",
+                   start = "2015-04-12", end = "2022-12-31",
+                   min = "2015-04-12", max = "2022-12-31",
+                   separator = " - ", format = "dd/mm/yy",
+                   startview = 'year', language = 'pt-BR', weekstart = 1),
+    pickerInput(
+      inputId = "cor_pele",
+      label = "Cor da pele", 
+      choices = c("amarela","branca","ignorada","outros","parda","preta"),
+      selected = c("amarela","branca","ignorada","outros","parda","preta"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE),
+    sliderInput("idade_slider", "Filtrar por Idade:", min = -1, max = 87, value = c(-1,87)),
+    actionButton("aplicar","Modificar os dados"),
+    actionButton("reset","Não usar Filtro"))  
+
+
+
+Side_lat <-  fluidPage( 
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2018-01-03", end = "2022-12-31",
+                 min = "2018-01-03", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  pickerInput(inputId = "cor_pele",
+              label = "Cor da pele", 
+              choices = c("amarela","branca","não informado","parda","preta","vermelha"),
+              selected = c("amarela","branca","não informado","parda","preta","vermelha"),
+              options = list(
+                `actions-box` = TRUE), 
+              multiple = TRUE),
+  pickerInput(inputId = "sexo",
+              label = "Sexo", 
+              choices = c("feminino","indefinido","masculino"),
+              selected = c("feminino","indefinido","masculino"),
+              options = list(
+                `actions-box` = TRUE), 
+              multiple = TRUE),
+  sliderInput("idade_slider", "Filtrar por Idade:",
+              min = -1, max = 118, value = c(-1, 118)),
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_lcs <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2016-09-14", end = "2022-12-31",
+                 min = "2016-09-14", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  pickerInput(
+    inputId = "cor_pele",
+    label = "Cor da pele", 
+    choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
+    selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE),
+  pickerInput(
+    inputId = "sexo",
+    label = "Sexo", 
+    choices = c("feminino","indefinido","masculino"),
+    selected = c("feminino","indefinido","masculino"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  sliderInput("idade_slider", "Filtrar por Idade:",
+              min = -1, max = 88, value = c(-1, 88)),
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+
+
+Side_mdi <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2013-01-01", end = "2022-12-31",
+                 min = "2013-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  pickerInput(
+    inputId = "cor_pele",
+    label = "Cor da pele", 
+    choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
+    selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE),
+  pickerInput(
+    inputId = "sexo",
+    label = "Sexo", 
+    choices = c("feminino","indefinido","masculino","não informado"),
+    selected = c("feminino","indefinido","masculino","não informado"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE),
+  sliderInput("idade_slider", "Filtrar por Idade:",
+              min = -1, max = 77, value = c(-1, 77)),
+  
+  fluidRow(
+    column(7,pickerInput(
+      inputId = "corp",
+      label = "Situação do policial", 
+      choices = c("folga","serviço"),
+      selected = c("folga","serviço"),
+      options = list(
+        `actions-box` = TRUE), 
+      multiple = TRUE
+    ))),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_mor <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2013-01-01", end = "2022-12-31",
+                 min = "2013-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  pickerInput(
+    inputId = "descr_local",
+    label = "Descrição do local de ocorrência", 
+    choices = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
+    selected = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE),
+  pickerInput(
+    inputId = "desdobramento",
+    label = "Desdobramento da ocorrência", 
+    choices = c(
+      "i - encontro de cadáver sem lesões aparentes",
+      "ii - dúvidas razoáveis quanto a suicídio ou morte provocada",
+      "iii - morte acidental",
+      "iv - morte súbita ou natural",
+      "não informado"
+    ),
+    selected = c(
+      "i - encontro de cadáver sem lesões aparentes",
+      "ii - dúvidas razoáveis quanto a suicídio ou morte provocada",
+      "iii - morte acidental",
+      "iv - morte súbita ou natural",
+      "não informado"
+    ),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  sliderInput("idade_slider", "Filtrar por Idade:",
+              min = -1, max = 123, value = c(-1,123)),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_iml <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2013-01-01", end = "2022-12-31",
+                 min = "2013-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1 ),
+  sliderTextInput("idade_slider2", "Filtrar por Idade:",
+                  choices = as.character(c(-1:110,2015,2016)), selected = as.character(c(-1:110,2015,2016))[c(1,114)]  ),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_dad <- fluidPage(dateRangeInput('dateRange2',
+                                     label = "Filtrar por data",
+                                     start = "2022-01-01", end = "2022-12-31",
+                                     min = "2022-01-01", max = "2022-12-31",
+                                     separator = " - ", format = "dd/mm/yy",
+                                     startview = 'year', language = 'pt-BR', weekstart = 1),
+                      pickerInput(
+                        inputId = "natureza",
+                        label = "Natureza da ocorrência", 
+                        choices = c(
+                          "estupro",
+                          "estupro de vulnerável",
+                          "furto - outros",
+                          "furto de carga",
+                          "furto de veículo",
+                          "homicídio doloso",
+                          "homicídio doloso em estab. prisional",
+                          "homicídio doloso por acidente de trânsito",
+                          "latrocínio",
+                          "lesão corporal seguida de morte",
+                          "roubo - outros",
+                          "roubo a banco",
+                          "roubo de carga",
+                          "roubo de veículo"
+                        ),
+                        selected = c(
+                          "estupro",
+                          "estupro de vulnerável",
+                          "furto - outros",
+                          "furto de carga",
+                          "furto de veículo",
+                          "homicídio doloso",
+                          "homicídio doloso em estab. prisional",
+                          "homicídio doloso por acidente de trânsito",
+                          "latrocínio",
+                          "lesão corporal seguida de morte",
+                          "roubo - outros",
+                          "roubo a banco",
+                          "roubo de carga",
+                          "roubo de veículo"
+                        ),
+                        options = list(
+                          `actions-box` = TRUE), 
+                        multiple = TRUE
+                      ),
+                      
+                      pickerInput(
+                        inputId = "descr_local",
+                        label = "Descrição do local da ocorrência", 
+                        choices = c(
+                          "area não ocupada",
+                          "centro comerc./empresarial",
+                          "comércio e serviços",
+                          "condominio comercial",
+                          "condominio residencial",
+                          "entidade assistencial",
+                          "escritório",
+                          "estabelecimento bancário",
+                          "estabelecimento comercial",
+                          "estabelecimento de ensino",
+                          "estabelecimento industrial",
+                          "estabelecimento prisional",
+                          "estacionamento com vigilância",
+                          "estacionamento particular",
+                          "estacionamento público",
+                          "estrada de ferro",
+                          "favela",
+                          "garagem coletiva de prédio",
+                          "garagem ou abrigo de residência",
+                          "hospedagem",
+                          "internet",
+                          "lazer e recreação",
+                          "local clandestino/ilegal",
+                          "não informado",
+                          "outros",
+                          "repartição pública",
+                          "residência",
+                          "restaurante e afins",
+                          "rodovia/estrada",
+                          "saúde",
+                          "serviços e bens públicos",
+                          "shopping center",
+                          "sindicato",
+                          "templo e afins",
+                          "terminal/estação",
+                          "unidade rural",
+                          "veículo em movimento",
+                          "via pública"
+                        ),
+                        selected = c(
+                          "area não ocupada",
+                          "centro comerc./empresarial",
+                          "comércio e serviços",
+                          "condominio comercial",
+                          "condominio residencial",
+                          "entidade assistencial",
+                          "escritório",
+                          "estabelecimento bancário",
+                          "estabelecimento comercial",
+                          "estabelecimento de ensino",
+                          "estabelecimento industrial",
+                          "estabelecimento prisional",
+                          "estacionamento com vigilância",
+                          "estacionamento particular",
+                          "estacionamento público",
+                          "estrada de ferro",
+                          "favela",
+                          "garagem coletiva de prédio",
+                          "garagem ou abrigo de residência",
+                          "hospedagem",
+                          "internet",
+                          "lazer e recreação",
+                          "local clandestino/ilegal",
+                          "não informado",
+                          "outros",
+                          "repartição pública",
+                          "residência",
+                          "restaurante e afins",
+                          "rodovia/estrada",
+                          "saúde",
+                          "serviços e bens públicos",
+                          "shopping center",
+                          "sindicato",
+                          "templo e afins",
+                          "terminal/estação",
+                          "unidade rural",
+                          "veículo em movimento",
+                          "via pública"
+                        ),
+                        options = list(
+                          `actions-box` = TRUE), 
+                        multiple = TRUE
+                      ),
+                      
+                      actionButton("aplicar","Modificar os dados"),
+                      actionButton("reset","Não usar Filtro"))  
+
+
+Side_rouc <-  fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2010-01-01", end = "2022-12-31",
+                 min = "2010-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  
+  
+  sliderTextInput("quantidade_celular", "Filtrar por Idade:",
+                  choices = l, selected = l[c(1,356)] ),
+  
+  
+  pickerInput(
+    inputId = "descr_local",
+    label = "Descrição do local", 
+    choices = c(
+      "area não ocupada","carro forte", "centro comerc./empresarial", "comércio e serviços",
+      "condominio residencial", "condominio comercial" , "entidade assistencial",
+      "escritório", "estabelecimento bancário", "estabelecimento de ensino",
+      "estabelecimento industrial", "estabelecimento prisional",
+      "estacionamento com vigilância", "estacionamento particular",
+      "estacionamento público", "estrada de ferro", "favela",
+      "garagem coletiva de prédio", "garagem ou abrigo de residência", "hospedagem",
+      "internet", "lazer e recreação", "local clandestino/ilegal", "não informado",
+      "outros", "repartição pública", "residência", "restaurante e afins",
+      "rodovia/estrada", "saúde", "serviços e bens públicos", "shopping center",
+      "sindicato", "templo e afins", "terminal/estação", "unidade rural",
+      "veículo em movimento", "via pública"
+    ),
+    selected = c(
+      "area não ocupada","carro forte", "centro comerc./empresarial", "comércio e serviços",
+      "condominio residencial", "condominio comercial", "entidade assistencial",
+      "escritório", "estabelecimento bancário", "estabelecimento de ensino",
+      "estabelecimento industrial", "estabelecimento prisional",
+      "estacionamento com vigilância", "estacionamento particular",
+      "estacionamento público", "estrada de ferro", "favela",
+      "garagem coletiva de prédio", "garagem ou abrigo de residência", "hospedagem",
+      "internet", "lazer e recreação", "local clandestino/ilegal", "não informado",
+      "outros", "repartição pública", "residência", "restaurante e afins",
+      "rodovia/estrada", "saúde", "serviços e bens públicos", "shopping center",
+      "sindicato", "templo e afins", "terminal/estação", "unidade rural",
+      "veículo em movimento", "via pública"
+    ),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_furc <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2010-01-01", end = "2022-12-31",
+                 min = "2010-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1),
+  
+  sliderTextInput("quantidade_celular", "Filtrar por Idade:",
+                  choices = j, selected = j[c(1,282)] ),
+  
+  pickerInput(
+    inputId = "descr_local",
+    label = "Descrição do local", 
+    choices = c(
+      "area não ocupada", "carro forte", "centro comerc./empresarial", 
+      "comércio e serviços", "condominio comercial", "condominio residencial", 
+      "entidade assistencial", "escritório", "estabelecimento bancário", 
+      "estabelecimento de ensino", "estabelecimento industrial", 
+      "estabelecimento prisional", "estacionamento com vigilância", 
+      "estacionamento particular", "estacionamento público", "estrada de ferro", 
+      "favela", "garagem coletiva de prédio", "garagem ou abrigo de residência", 
+      "hospedagem", "internet", "lazer e recreação", "local clandestino/ilegal", 
+      "outros", "repartição pública", "residência", "restaurante e afins", 
+      "rodovia/estrada", "saúde", "serviços e bens públicos", 
+      "shopping center", "sindicato", "templo e afins", "terminal/estação", 
+      "unidade rural", "veículo em movimento", "via pública"
+    ),
+    selected = c(
+      "area não ocupada", "carro forte", "centro comerc./empresarial", 
+      "comércio e serviços", "condominio comercial", "condominio residencial", 
+      "entidade assistencial", "escritório", "estabelecimento bancário", 
+      "estabelecimento de ensino", "estabelecimento industrial", 
+      "estabelecimento prisional", "estacionamento com vigilância", 
+      "estacionamento particular", "estacionamento público", "estrada de ferro", 
+      "favela", "garagem coletiva de prédio", "garagem ou abrigo de residência", 
+      "hospedagem", "internet", "lazer e recreação", "local clandestino/ilegal", 
+      "outros", "repartição pública", "residência", "restaurante e afins", 
+      "rodovia/estrada", "saúde", "serviços e bens públicos", 
+      "shopping center", "sindicato", "templo e afins", "terminal/estação", 
+      "unidade rural", "veículo em movimento", "via pública"
+    ),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
+Side_rouv <- fluidPage(
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2003-01-01", end = "2022-12-31",
+                 min = "2003-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1
+  ),
+  pickerInput(
+    inputId = "tipo_veiculo",
+    label = "Tipo de veiculo", 
+    choices =c("automovel"         
+               ,"bicicleta"        
+               ,"bonde"             
+               ,"caminhão"         
+               ,"caminhão trator"   
+               ,"caminhonete"      
+               ,"camioneta"         
+               ,"carro de mâo"     
+               ,"carroça"           
+               ,"chassi-plataforma"
+               ,"ciclomoto"         
+               ,"inexist."         
+               ,"micro-onibus"      
+               ,"motociclo"        
+               ,"motoneta"          
+               ,"motor casa"       
+               ,"não informado"     
+               ,"onibus"           
+               ,"quadriciclo"       
+               ,"reboque"          
+               ,"semi-reboque"      
+               ,"side-car"         
+               ,"trator esteiras"   
+               ,"trator misto"     
+               ,"trator rodas"      
+               ,"triciclo"         
+               ,"utilitário"),
+    selected = c("automovel"         
+                 ,"bicicleta"        
+                 ,"bonde"             
+                 ,"caminhão"         
+                 ,"caminhão trator"   
+                 ,"caminhonete"      
+                 ,"camioneta"         
+                 ,"carro de mâo"     
+                 ,"carroça"           
+                 ,"chassi-plataforma"
+                 ,"ciclomoto"         
+                 ,"inexist."         
+                 ,"micro-onibus"      
+                 ,"motociclo"        
+                 ,"motoneta"          
+                 ,"motor casa"       
+                 ,"não informado"     
+                 ,"onibus"           
+                 ,"quadriciclo"       
+                 ,"reboque"          
+                 ,"semi-reboque"      
+                 ,"side-car"         
+                 ,"trator esteiras"   
+                 ,"trator misto"     
+                 ,"trator rodas"      
+                 ,"triciclo"         
+                 ,"utilitário"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  pickerInput(
+    inputId = "ano_veiculo",
+    label = "Ano do veiculo", 
+    choices = c(
+      "0", "10", "1000", "1007", "1010", "1011", "1014", "1034", "1039", "1111",
+      "1112", "1113", "113", "1180", "12", "120", "1200", "1212", "124", "125",
+      "1313", "1314", "1316", "1318", "1367", "1414", "1415", "1418", "150", "1501",
+      "1513", "1517", "1519", "160", "1600", "1617", "1618", "1620", "1634", "1718",
+      "1720", "180", "1900", "1914", "1938", "1959", "1960", "1961", "1962", "1963",
+      "1964", "1965", "1966", "1967", "1968", "1969", "1970", "1971", "1972", "1973",
+      "1974", "1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982", "1983",
+      "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992", "1993",
+      "1994", "1995", "1996", "1997", "1998", "1999", "200", "2000", "2001", "2002",
+      "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012",
+      "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022",
+      "2023", "2033", "205", "2055", "206", "2066", "207", "208", "209", "2099",
+      "2102", "2107", "211", "2112", "2113", "2122", "217", "219", "2204", "2206",
+      "2209", "2220", "230", "2301", "2322", "2422", "2423", "2425", "2428", "2429",
+      "250", "265", "275", "283", "2912", "2913", "292", "2924", "300", "315", "323",
+      "4", "4000", "412", "416", "4275", "4283", "4292", "5", "50", "5049", "506",
+      "521", "5310", "580", "60", "600", "608", "65", "6997", "7", "7180", "750",
+      "8", "802", "809", "85", "9", "910", "915", "93", "97", "98", "não informado"
+    ),
+    selected = c(
+      "0", "10", "1000", "1007", "1010", "1011", "1014", "1034", "1039", "1111",
+      "1112", "1113", "113", "1180", "12", "120", "1200", "1212", "124", "125",
+      "1313", "1314", "1316", "1318", "1367", "1414", "1415", "1418", "150", "1501",
+      "1513", "1517", "1519", "160", "1600", "1617", "1618", "1620", "1634", "1718",
+      "1720", "180", "1900", "1914", "1938", "1959", "1960", "1961", "1962", "1963",
+      "1964", "1965", "1966", "1967", "1968", "1969", "1970", "1971", "1972", "1973",
+      "1974", "1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982", "1983",
+      "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992", "1993",
+      "1994", "1995", "1996", "1997", "1998", "1999", "200", "2000", "2001", "2002",
+      "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012",
+      "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022",
+      "2023", "2033", "205", "2055", "206", "2066", "207", "208", "209", "2099",
+      "2102", "2107", "211", "2112", "2113", "2122", "217", "219", "2204", "2206",
+      "2209", "2220", "230", "2301", "2322", "2422", "2423", "2425", "2428", "2429",
+      "250", "265", "275", "283", "2912", "2913", "292", "2924", "300", "315", "323",
+      "4", "4000", "412", "416", "4275", "4283", "4292", "5", "50", "5049", "506",
+      "521", "5310", "580", "60", "600", "608", "65", "6997", "7", "7180", "750",
+      "8", "802", "809", "85", "9", "910", "915", "93", "97", "98", "não informado"
+    ),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+Side_furv <- fluidPage(
+  
+  
+  dateRangeInput('dateRange2',
+                 label = "Filtrar por data",
+                 start = "2003-01-01", end = "2022-12-31",
+                 min = "2003-01-01", max = "2022-12-31",
+                 separator = " - ", format = "dd/mm/yy",
+                 startview = 'year', language = 'pt-BR', weekstart = 1
+  ),
+  pickerInput(
+    inputId = "tipo_veiculo",
+    label = "Tipo de veiculo", 
+    choices = c("automovel"         
+                ,"bicicleta"        
+                ,"caminhão"          
+                ,"caminhão trator"  
+                ,"caminhonete"       
+                ,"camioneta"        
+                ,"carroça"           
+                ,"charrete"         
+                ,"chassi-plataforma" 
+                ,"ciclomoto"        
+                ,"inexist."          
+                ,"micro-onibus"     
+                ,"motociclo"         
+                ,"motoneta"         
+                ,"motor casa"        
+                ,"não informado"    
+                ,"onibus"            
+                ,"quadriciclo"      
+                ,"reboque"           
+                ,"semi-reboque"     
+                ,"side-car"          
+                ,"trator esteiras"  
+                ,"trator misto"      
+                ,"trator rodas"     
+                ,"triciclo"          
+                ,"utilitário"),
+    selected = c("automovel"         
+                 ,"bicicleta"        
+                 ,"caminhão"          
+                 ,"caminhão trator"  
+                 ,"caminhonete"       
+                 ,"camioneta"        
+                 ,"carroça"           
+                 ,"charrete"         
+                 ,"chassi-plataforma" 
+                 ,"ciclomoto"        
+                 ,"inexist."          
+                 ,"micro-onibus"     
+                 ,"motociclo"         
+                 ,"motoneta"         
+                 ,"motor casa"        
+                 ,"não informado"    
+                 ,"onibus"            
+                 ,"quadriciclo"      
+                 ,"reboque"           
+                 ,"semi-reboque"     
+                 ,"side-car"          
+                 ,"trator esteiras"  
+                 ,"trator misto"      
+                 ,"trator rodas"     
+                 ,"triciclo"          
+                 ,"utilitário"),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  pickerInput(
+    inputId = "ano_veiculo",
+    label = "Ano do veiculo", 
+    choices = c(
+      -1, 1892, 1910, 1911, 1912, 1914, 1928, 1929, 1932, 1939, 1940,
+      1944, 1945, 1946, 1948, 1949, 1950, 1951, 1952, 1954, 1955, 1957,
+      1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968,
+      1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
+      1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990,
+      1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
+      2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
+      2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023,
+      2090
+    ),
+    selected = c(
+      -1, 1892, 1910, 1911, 1912, 1914, 1928, 1929, 1932, 1939, 1940,
+      1944, 1945, 1946, 1948, 1949, 1950, 1951, 1952, 1954, 1955, 1957,
+      1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968,
+      1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
+      1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990,
+      1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
+      2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
+      2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023,
+      2090
+    ),
+    options = list(
+      `actions-box` = TRUE), 
+    multiple = TRUE
+  ),
+  
+  actionButton("aplicar","Modificar os dados"),
+  actionButton("reset","Não usar Filtro"))  
+
 aplicarEstilosAoGrafico <- function(graficoId) {
   runjs(sprintf('
     var graficoDiv = document.getElementById("%s");
@@ -54,7 +904,10 @@ aplicarEstilosAoGrafico <- function(graficoId) {
   ', graficoId))
 }
 
-get_acf <- function(dados, lag_max, coluna, tipo = "correlation"){
+get_acf <- function(dados, coluna, tipo = "correlation"){
+  colnames(dados)[2] <- "total"
+  
+  lag_max = dados %>% pull(total) %>% length()
   
   dados_filtrados = dados %>% select({{coluna}})
   
@@ -441,14 +1294,13 @@ get_transformacoes_modelo <- function(serie,tipo_transformacao = "identidade"){
 #<ARIMA(0,1,1)(1,0,1)[12]>
 #PDQ
 
-
 fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , seasonal_dif = '0:1' ,p = '0:5',q = '0:5',P = '0:2',Q = '0:2',lag_seasonal_dif = "automatico",modelos){
   serie_modificada = get_transformacoes_modelo(serie,tipo_transformacao)
   
   
   pqd_modelo_sugerido =  get_pqd(serie_modificada,d=d)['modelo']
   if(pqd_modelo_sugerido['ruido_branco'] == "Verifique se a série é ruído branco")
-  {return("oi")}
+  {return(123)}
   
   else{
     
@@ -458,14 +1310,19 @@ fit_serie <- function(serie,tipo_transformacao = 'identidade', d,dif ='1:2' , se
     
     
     
+    if(tipo_transformacao == "box_cox"){
+      lambda = serie %>% features(!!sym(colnames(serie)[2]), features = guerrero) %>% pull(lambda_guerrero)
+      string_box_cox = glue('fabletools::box_cox(total, {lambda})')
+    }
+    
     # Ajuste dos modelos
     
     string_transformacao = switch(tipo_transformacao,
                                   identidade = 'total',
-                                  box_cox = glue('box_cox(total, {lambda})'),
+                                  box_cox = string_box_cox,
                                   sqrt = 'sqrt(total)',
-                                  inversa = '1/total',
-                                  log = 'log(total)')
+                                  inversa = '1/(total + 1)',
+                                  log = 'log(total + 1 )')
     
     #usuario
     
@@ -585,752 +1442,6 @@ check_model_2 <- function(objeto_fit,modelo){
   return(class(nulo[[1]]$fit) == "null_mdl")
 }
 
-
-
-Side_hom <- 
-  fluidPage(
-    #h3("Filtro dos dados"),
-    # br(),
-    dateRangeInput('dateRange2',
-                   label = "Filtrar por data",
-                   start = "2017-01-01", end = "2022-12-31",
-                   min = "2017-01-01", max = "2022-12-31",
-                   separator = " - ", format = "dd/mm/yy",
-                   startview = 'year', language = 'pt-BR', weekstart = 1
-    ),
-    pickerInput(
-      inputId = "cor_pele",
-      label = "Cor da pele", 
-      choices = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
-      selected = c("amarela","branca","ignorada","não informado", "outros", "parda", "preta", "vermelha"),
-      options = list(
-        `actions-box` = TRUE), 
-      multiple = TRUE
-    ),
-    pickerInput(
-      inputId = "sexo",
-      label = "Sexo", 
-      choices = c("feminino","indefinido","masculino"),
-      selected = c("feminino","indefinido","masculino"),
-      options = list(
-        `actions-box` = TRUE), 
-      multiple = TRUE
-    ),
-    sliderInput("idade_slider", "Filtrar por Idade:",
-                min = -1, max = 97, value = c(-1, 97)),
-    actionButton("aplicar","Modificar os dados"),
-    actionButton("reset","Não usar Filtro"))
-
-
-
-
-Side_fem <- 
-  fluidPage(
-    
-    
-    dateRangeInput('dateRange2',
-                   label = "Filtrar por data",
-                   start = "2015-04-12", end = "2022-12-31",
-                   min = "2015-04-12", max = "2022-12-31",
-                   separator = " - ", format = "dd/mm/yy",
-                   startview = 'year', language = 'pt-BR', weekstart = 1),
-    pickerInput(
-      inputId = "cor_pele",
-      label = "Cor da pele", 
-      choices = c("amarela","branca","ignorada","outros","parda","preta"),
-      selected = c("amarela","branca","ignorada","outros","parda","preta"),
-      options = list(
-        `actions-box` = TRUE), 
-      multiple = TRUE),
-    sliderInput("idade_slider", "Filtrar por Idade:", min = -1, max = 87, value = c(-1,87)),
-    actionButton("aplicar","Modificar os dados"),
-    actionButton("reset","Não usar Filtro"))  
-
-
-
-Side_lat <-  fluidPage( 
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2018-01-03", end = "2022-12-31",
-                 min = "2018-01-03", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  pickerInput(inputId = "cor_pele",
-              label = "Cor da pele", 
-              choices = c("amarela","branca","não informado","parda","preta","vermelha"),
-              selected = c("amarela","branca","não informado","parda","preta","vermelha"),
-              options = list(
-                `actions-box` = TRUE), 
-              multiple = TRUE),
-  pickerInput(inputId = "sexo",
-              label = "Sexo", 
-              choices = c("feminino","indefinido","masculino"),
-              selected = c("feminino","indefinido","masculino"),
-              options = list(
-                `actions-box` = TRUE), 
-              multiple = TRUE),
-  sliderInput("idade_slider", "Filtrar por Idade:",
-              min = -1, max = 118, value = c(-1, 118)),
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_lcs <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2016-09-14", end = "2022-12-31",
-                 min = "2016-09-14", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  pickerInput(
-    inputId = "cor_pele",
-    label = "Cor da pele", 
-    choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
-    selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE),
-  pickerInput(
-    inputId = "sexo",
-    label = "Sexo", 
-    choices = c("feminino","indefinido","masculino"),
-    selected = c("feminino","indefinido","masculino"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  sliderInput("idade_slider", "Filtrar por Idade:",
-              min = -1, max = 88, value = c(-1, 88)),
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-
-
-Side_mdi <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2013-01-01", end = "2022-12-31",
-                 min = "2013-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  pickerInput(
-    inputId = "cor_pele",
-    label = "Cor da pele", 
-    choices = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
-    selected = c("amarela","branca","ignorada","não informado","outros","parda","preta"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE),
-  pickerInput(
-    inputId = "sexo",
-    label = "Sexo", 
-    choices = c("feminino","indefinido","masculino","não informado"),
-    selected = c("feminino","indefinido","masculino","não informado"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE),
-  sliderInput("idade_slider", "Filtrar por Idade:",
-              min = -1, max = 77, value = c(-1, 77)),
-  
-  fluidRow(
-    column(7,pickerInput(
-      inputId = "corp",
-      label = "Situação do policial", 
-      choices = c("folga","serviço"),
-      selected = c("folga","serviço"),
-      options = list(
-        `actions-box` = TRUE), 
-      multiple = TRUE
-    ))),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_mor <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2013-01-01", end = "2022-12-31",
-                 min = "2013-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  pickerInput(
-    inputId = "descr_local",
-    label = "Descrição do local de ocorrência", 
-    choices = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
-    selected = c("area não ocupada","centro comerc./empresarial","comércio e serviços","condominio comercial","condominio residencial","entidade assistencial","escritório","estabelecimento bancário","estabelecimento de ensino","estabelecimento industrial","estabelecimento prisional","estacionamento particular","estrada de ferro","favela","garagem coletiva de prédio","garagem ou abrigo de residência","hospedagem","internet","lazer e recreação","local clandestino/ilegal","outros","repartição pública","residência","restaurante e afins","rodovia/estrada","saúde","serviços e bens públicos","shopping center","sindicato","templo e afins","terminal/estação","unidade rural","veículo em movimento","via pública"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE),
-  pickerInput(
-    inputId = "desdobramento",
-    label = "Desdobramento da ocorrência", 
-    choices = c(
-      "i - encontro de cadáver sem lesões aparentes",
-      "ii - dúvidas razoáveis quanto a suicídio ou morte provocada",
-      "iii - morte acidental",
-      "iv - morte súbita ou natural",
-      "não informado"
-    ),
-    selected = c(
-      "i - encontro de cadáver sem lesões aparentes",
-      "ii - dúvidas razoáveis quanto a suicídio ou morte provocada",
-      "iii - morte acidental",
-      "iv - morte súbita ou natural",
-      "não informado"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  sliderInput("idade_slider", "Filtrar por Idade:",
-              min = -1, max = 123, value = c(-1,123)),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_iml <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2013-01-01", end = "2022-12-31",
-                 min = "2013-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_dad <- fluidPage(dateRangeInput('dateRange2',
-                                     label = "Filtrar por data",
-                                     start = "2022-01-01", end = "2022-12-31",
-                                     min = "2022-01-01", max = "2022-12-31",
-                                     separator = " - ", format = "dd/mm/yy",
-                                     startview = 'year', language = 'pt-BR', weekstart = 1),
-                      pickerInput(
-                        inputId = "natureza",
-                        label = "Natureza da ocorrência", 
-                        choices = c(
-                          "estupro",
-                          "estupro de vulnerável",
-                          "furto - outros",
-                          "furto de carga",
-                          "furto de veículo",
-                          "homicídio doloso",
-                          "homicídio doloso em estab. prisional",
-                          "homicídio doloso por acidente de trânsito",
-                          "latrocínio",
-                          "lesão corporal seguida de morte",
-                          "roubo - outros",
-                          "roubo a banco",
-                          "roubo de carga",
-                          "roubo de veículo"
-                        ),
-                        selected = c(
-                          "estupro",
-                          "estupro de vulnerável",
-                          "furto - outros",
-                          "furto de carga",
-                          "furto de veículo",
-                          "homicídio doloso",
-                          "homicídio doloso em estab. prisional",
-                          "homicídio doloso por acidente de trânsito",
-                          "latrocínio",
-                          "lesão corporal seguida de morte",
-                          "roubo - outros",
-                          "roubo a banco",
-                          "roubo de carga",
-                          "roubo de veículo"
-                        ),
-                        options = list(
-                          `actions-box` = TRUE), 
-                        multiple = TRUE
-                      ),
-                      
-                      pickerInput(
-                        inputId = "descr_local",
-                        label = "Descrição do local da ocorrência", 
-                        choices = c(
-                          "area não ocupada",
-                          "centro comerc./empresarial",
-                          "comércio e serviços",
-                          "condominio comercial",
-                          "condominio residencial",
-                          "entidade assistencial",
-                          "escritório",
-                          "estabelecimento bancário",
-                          "estabelecimento comercial",
-                          "estabelecimento de ensino",
-                          "estabelecimento industrial",
-                          "estabelecimento prisional",
-                          "estacionamento com vigilância",
-                          "estacionamento particular",
-                          "estacionamento público",
-                          "estrada de ferro",
-                          "favela",
-                          "garagem coletiva de prédio",
-                          "garagem ou abrigo de residência",
-                          "hospedagem",
-                          "internet",
-                          "lazer e recreação",
-                          "local clandestino/ilegal",
-                          "não informado",
-                          "outros",
-                          "repartição pública",
-                          "residência",
-                          "restaurante e afins",
-                          "rodovia/estrada",
-                          "saúde",
-                          "serviços e bens públicos",
-                          "shopping center",
-                          "sindicato",
-                          "templo e afins",
-                          "terminal/estação",
-                          "unidade rural",
-                          "veículo em movimento",
-                          "via pública"
-                        ),
-                        selected = c(
-                          "area não ocupada",
-                          "centro comerc./empresarial",
-                          "comércio e serviços",
-                          "condominio comercial",
-                          "condominio residencial",
-                          "entidade assistencial",
-                          "escritório",
-                          "estabelecimento bancário",
-                          "estabelecimento comercial",
-                          "estabelecimento de ensino",
-                          "estabelecimento industrial",
-                          "estabelecimento prisional",
-                          "estacionamento com vigilância",
-                          "estacionamento particular",
-                          "estacionamento público",
-                          "estrada de ferro",
-                          "favela",
-                          "garagem coletiva de prédio",
-                          "garagem ou abrigo de residência",
-                          "hospedagem",
-                          "internet",
-                          "lazer e recreação",
-                          "local clandestino/ilegal",
-                          "não informado",
-                          "outros",
-                          "repartição pública",
-                          "residência",
-                          "restaurante e afins",
-                          "rodovia/estrada",
-                          "saúde",
-                          "serviços e bens públicos",
-                          "shopping center",
-                          "sindicato",
-                          "templo e afins",
-                          "terminal/estação",
-                          "unidade rural",
-                          "veículo em movimento",
-                          "via pública"
-                        ),
-                        options = list(
-                          `actions-box` = TRUE), 
-                        multiple = TRUE
-                      ),
-                      
-                      actionButton("aplicar","Modificar os dados"),
-                      actionButton("reset","Não usar Filtro"))  
-
-
-Side_rouc <-  fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2010-01-01", end = "2022-12-31",
-                 min = "2010-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  sliderInput(
-    inputId = "quantidade_celular",
-    label = "Quantidade furtada", 
-    min = -1, max = 14728864,
-    value = c(-1,14728864)
-  ),
-  pickerInput(
-    inputId = "descr_local",
-    label = "Descrição do local", 
-    choices = c(
-      "area não ocupada","carro forte", "centro comerc./empresarial", "comércio e serviços",
-      "condominio residencial", "condominio comercial" , "entidade assistencial",
-      "escritório", "estabelecimento bancário", "estabelecimento de ensino",
-      "estabelecimento industrial", "estabelecimento prisional",
-      "estacionamento com vigilância", "estacionamento particular",
-      "estacionamento público", "estrada de ferro", "favela",
-      "garagem coletiva de prédio", "garagem ou abrigo de residência", "hospedagem",
-      "internet", "lazer e recreação", "local clandestino/ilegal", "não informado",
-      "outros", "repartição pública", "residência", "restaurante e afins",
-      "rodovia/estrada", "saúde", "serviços e bens públicos", "shopping center",
-      "sindicato", "templo e afins", "terminal/estação", "unidade rural",
-      "veículo em movimento", "via pública"
-    ),
-    selected = c(
-      "area não ocupada","carro forte", "centro comerc./empresarial", "comércio e serviços",
-      "condominio residencial", "condominio comercial", "entidade assistencial",
-      "escritório", "estabelecimento bancário", "estabelecimento de ensino",
-      "estabelecimento industrial", "estabelecimento prisional",
-      "estacionamento com vigilância", "estacionamento particular",
-      "estacionamento público", "estrada de ferro", "favela",
-      "garagem coletiva de prédio", "garagem ou abrigo de residência", "hospedagem",
-      "internet", "lazer e recreação", "local clandestino/ilegal", "não informado",
-      "outros", "repartição pública", "residência", "restaurante e afins",
-      "rodovia/estrada", "saúde", "serviços e bens públicos", "shopping center",
-      "sindicato", "templo e afins", "terminal/estação", "unidade rural",
-      "veículo em movimento", "via pública"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_furc <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2010-01-01", end = "2022-12-31",
-                 min = "2010-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1),
-  sliderInput(
-    inputId = "quantidade_celular",
-    label = "Quantidade furtada", 
-    min = -1, max = 14728864,
-    value = c(-1,99999999)
-  ),
-  pickerInput(
-    inputId = "descr_local",
-    label = "Descrição do local", 
-    choices = c(
-      "area não ocupada", "carro forte", "centro comerc./empresarial", 
-      "comércio e serviços", "condominio comercial", "condominio residencial", 
-      "entidade assistencial", "escritório", "estabelecimento bancário", 
-      "estabelecimento de ensino", "estabelecimento industrial", 
-      "estabelecimento prisional", "estacionamento com vigilância", 
-      "estacionamento particular", "estacionamento público", "estrada de ferro", 
-      "favela", "garagem coletiva de prédio", "garagem ou abrigo de residência", 
-      "hospedagem", "internet", "lazer e recreação", "local clandestino/ilegal", 
-      "outros", "repartição pública", "residência", "restaurante e afins", 
-      "rodovia/estrada", "saúde", "serviços e bens públicos", 
-      "shopping center", "sindicato", "templo e afins", "terminal/estação", 
-      "unidade rural", "veículo em movimento", "via pública"
-    ),
-    selected = c(
-      "area não ocupada", "carro forte", "centro comerc./empresarial", 
-      "comércio e serviços", "condominio comercial", "condominio residencial", 
-      "entidade assistencial", "escritório", "estabelecimento bancário", 
-      "estabelecimento de ensino", "estabelecimento industrial", 
-      "estabelecimento prisional", "estacionamento com vigilância", 
-      "estacionamento particular", "estacionamento público", "estrada de ferro", 
-      "favela", "garagem coletiva de prédio", "garagem ou abrigo de residência", 
-      "hospedagem", "internet", "lazer e recreação", "local clandestino/ilegal", 
-      "outros", "repartição pública", "residência", "restaurante e afins", 
-      "rodovia/estrada", "saúde", "serviços e bens públicos", 
-      "shopping center", "sindicato", "templo e afins", "terminal/estação", 
-      "unidade rural", "veículo em movimento", "via pública"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-Side_rouv <- fluidPage(
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2003-01-01", end = "2022-12-31",
-                 min = "2003-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1
-  ),
-  pickerInput(
-    inputId = "tipo_veiculo",
-    label = "Tipo de veiculo", 
-    choices =c("automovel"         
-               ,"bicicleta"        
-               ,"bonde"             
-               ,"caminhão"         
-               ,"caminhão trator"   
-               ,"caminhonete"      
-               ,"camioneta"         
-               ,"carro de mâo"     
-               ,"carroça"           
-               ,"chassi-plataforma"
-               ,"ciclomoto"         
-               ,"inexist."         
-               ,"micro-onibus"      
-               ,"motociclo"        
-               ,"motoneta"          
-               ,"motor casa"       
-               ,"não informado"     
-               ,"onibus"           
-               ,"quadriciclo"       
-               ,"reboque"          
-               ,"semi-reboque"      
-               ,"side-car"         
-               ,"trator esteiras"   
-               ,"trator misto"     
-               ,"trator rodas"      
-               ,"triciclo"         
-               ,"utilitário"),
-    selected = c("automovel"         
-                 ,"bicicleta"        
-                 ,"bonde"             
-                 ,"caminhão"         
-                 ,"caminhão trator"   
-                 ,"caminhonete"      
-                 ,"camioneta"         
-                 ,"carro de mâo"     
-                 ,"carroça"           
-                 ,"chassi-plataforma"
-                 ,"ciclomoto"         
-                 ,"inexist."         
-                 ,"micro-onibus"      
-                 ,"motociclo"        
-                 ,"motoneta"          
-                 ,"motor casa"       
-                 ,"não informado"     
-                 ,"onibus"           
-                 ,"quadriciclo"       
-                 ,"reboque"          
-                 ,"semi-reboque"      
-                 ,"side-car"         
-                 ,"trator esteiras"   
-                 ,"trator misto"     
-                 ,"trator rodas"      
-                 ,"triciclo"         
-                 ,"utilitário"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  pickerInput(
-    inputId = "ano_veiculo",
-    label = "Ano do veiculo", 
-    choices = c(
-      "0", "10", "1000", "1007", "1010", "1011", "1014", "1034", "1039", "1111",
-      "1112", "1113", "113", "1180", "12", "120", "1200", "1212", "124", "125",
-      "1313", "1314", "1316", "1318", "1367", "1414", "1415", "1418", "150", "1501",
-      "1513", "1517", "1519", "160", "1600", "1617", "1618", "1620", "1634", "1718",
-      "1720", "180", "1900", "1914", "1938", "1959", "1960", "1961", "1962", "1963",
-      "1964", "1965", "1966", "1967", "1968", "1969", "1970", "1971", "1972", "1973",
-      "1974", "1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982", "1983",
-      "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992", "1993",
-      "1994", "1995", "1996", "1997", "1998", "1999", "200", "2000", "2001", "2002",
-      "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012",
-      "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022",
-      "2023", "2033", "205", "2055", "206", "2066", "207", "208", "209", "2099",
-      "2102", "2107", "211", "2112", "2113", "2122", "217", "219", "2204", "2206",
-      "2209", "2220", "230", "2301", "2322", "2422", "2423", "2425", "2428", "2429",
-      "250", "265", "275", "283", "2912", "2913", "292", "2924", "300", "315", "323",
-      "4", "4000", "412", "416", "4275", "4283", "4292", "5", "50", "5049", "506",
-      "521", "5310", "580", "60", "600", "608", "65", "6997", "7", "7180", "750",
-      "8", "802", "809", "85", "9", "910", "915", "93", "97", "98", "não informado"
-    ),
-    selected = c(
-      "0", "10", "1000", "1007", "1010", "1011", "1014", "1034", "1039", "1111",
-      "1112", "1113", "113", "1180", "12", "120", "1200", "1212", "124", "125",
-      "1313", "1314", "1316", "1318", "1367", "1414", "1415", "1418", "150", "1501",
-      "1513", "1517", "1519", "160", "1600", "1617", "1618", "1620", "1634", "1718",
-      "1720", "180", "1900", "1914", "1938", "1959", "1960", "1961", "1962", "1963",
-      "1964", "1965", "1966", "1967", "1968", "1969", "1970", "1971", "1972", "1973",
-      "1974", "1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982", "1983",
-      "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992", "1993",
-      "1994", "1995", "1996", "1997", "1998", "1999", "200", "2000", "2001", "2002",
-      "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012",
-      "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022",
-      "2023", "2033", "205", "2055", "206", "2066", "207", "208", "209", "2099",
-      "2102", "2107", "211", "2112", "2113", "2122", "217", "219", "2204", "2206",
-      "2209", "2220", "230", "2301", "2322", "2422", "2423", "2425", "2428", "2429",
-      "250", "265", "275", "283", "2912", "2913", "292", "2924", "300", "315", "323",
-      "4", "4000", "412", "416", "4275", "4283", "4292", "5", "50", "5049", "506",
-      "521", "5310", "580", "60", "600", "608", "65", "6997", "7", "7180", "750",
-      "8", "802", "809", "85", "9", "910", "915", "93", "97", "98", "não informado"
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-Side_furv <- fluidPage(
-  
-  
-  dateRangeInput('dateRange2',
-                 label = "Filtrar por data",
-                 start = "2003-01-01", end = "2022-12-31",
-                 min = "2003-01-01", max = "2022-12-31",
-                 separator = " - ", format = "dd/mm/yy",
-                 startview = 'year', language = 'pt-BR', weekstart = 1
-  ),
-  pickerInput(
-    inputId = "tipo_veiculo",
-    label = "Tipo de veiculo", 
-    choices = c("automovel"         
-                ,"bicicleta"        
-                ,"caminhão"          
-                ,"caminhão trator"  
-                ,"caminhonete"       
-                ,"camioneta"        
-                ,"carroça"           
-                ,"charrete"         
-                ,"chassi-plataforma" 
-                ,"ciclomoto"        
-                ,"inexist."          
-                ,"micro-onibus"     
-                ,"motociclo"         
-                ,"motoneta"         
-                ,"motor casa"        
-                ,"não informado"    
-                ,"onibus"            
-                ,"quadriciclo"      
-                ,"reboque"           
-                ,"semi-reboque"     
-                ,"side-car"          
-                ,"trator esteiras"  
-                ,"trator misto"      
-                ,"trator rodas"     
-                ,"triciclo"          
-                ,"utilitário"),
-    selected = c("automovel"         
-                 ,"bicicleta"        
-                 ,"caminhão"          
-                 ,"caminhão trator"  
-                 ,"caminhonete"       
-                 ,"camioneta"        
-                 ,"carroça"           
-                 ,"charrete"         
-                 ,"chassi-plataforma" 
-                 ,"ciclomoto"        
-                 ,"inexist."          
-                 ,"micro-onibus"     
-                 ,"motociclo"         
-                 ,"motoneta"         
-                 ,"motor casa"        
-                 ,"não informado"    
-                 ,"onibus"            
-                 ,"quadriciclo"      
-                 ,"reboque"           
-                 ,"semi-reboque"     
-                 ,"side-car"          
-                 ,"trator esteiras"  
-                 ,"trator misto"      
-                 ,"trator rodas"     
-                 ,"triciclo"          
-                 ,"utilitário"),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  pickerInput(
-    inputId = "ano_veiculo",
-    label = "Ano do veiculo", 
-    choices = c(
-      -1, 1892, 1910, 1911, 1912, 1914, 1928, 1929, 1932, 1939, 1940,
-      1944, 1945, 1946, 1948, 1949, 1950, 1951, 1952, 1954, 1955, 1957,
-      1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968,
-      1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
-      1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990,
-      1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
-      2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
-      2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023,
-      2090
-    ),
-    selected = c(
-      -1, 1892, 1910, 1911, 1912, 1914, 1928, 1929, 1932, 1939, 1940,
-      1944, 1945, 1946, 1948, 1949, 1950, 1951, 1952, 1954, 1955, 1957,
-      1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968,
-      1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979,
-      1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990,
-      1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
-      2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
-      2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023,
-      2090
-    ),
-    options = list(
-      `actions-box` = TRUE), 
-    multiple = TRUE
-  ),
-  
-  actionButton("aplicar","Modificar os dados"),
-  actionButton("reset","Não usar Filtro"))  
-
-vetor <- c(
-  "id_bo"                  
-  ,"id_laudo"     
-  ,"datahora_iml_reg"         
-  ,"index"                  
-  ,"data_bo_reg"            
-  ,"id_dp_reg"                  
-  ,"data_ocorr"             
-  ,"hora_ocorr"              
-  ,"num_logradouro_ocorr"   
-  ,"latitude_ocorr"         
-  ,"longitude_ocorr"    
-  ,"datahora_inicio_bo"          
-  ,"datahora_bo_reg"     
-  ,"marca_veiculo"          
-  ,"cor_veiculo"            
-  ,"cidade_veiculo"         
-  ,"uf_veiculo"             
-  ,"ano_fab_veiculo"        
-  ,"ano_mod_veiculo"     
-  ,"V1"                  
-  ,"qtde_celular","marca_celular",
-  "logradouro_ocorr")
-
-
-
-# Vetor de interesse
-vetor_interesse <- c("nome_dp_circ", "causa_morte_ocorr", "conclusao_ocorr", "idade_vitima",
-                     "nome_dp_reg", "nome_municipio_circ", "nome_municipio_reg",
-                     "descricao_local_ocorr", "vitima_fatal_ocorr", "tipo_pessoa",
-                     "sexo_pessoa", "idade_pessoa", "cor_pele_pessoa", "profissao_pessoa",
-                     "autoria_bo", "solucao_bo", "bairro_ocorr", "cidade_ocorr",
-                     "flagrante_ocorr", "especie_ocorr", "status_ocorr", "desdobramento_ocorr",
-                     "natureza_jur_ocorr", "tipo_veiculo", "coorp_envolvida_ocorr",
-                     "coorp_situacao_ocorr", "descricao_conduta_ocorr",
-                     "natureza_apurada_ocorr")
-
-
-dicionario <- setNames(gsub("_", " ", gsub("ocorr", "", trimws(vetor_interesse))), vetor_interesse)
-
-dicionario2 <- tibble(
-  "Homicídio" = c('2017/01','2022/12'),
-  "Feminicídio" = c('2015/04','2022/12'),
-  "Latrocínio" = c('2018/01','2022/12'),
-  "Lesão Corporal Seguida de Morte" = c('2016/09', '2022/12'),
-  "Morte Decorrente de Intervenção Policial" =  c('2013/01', '2022/12'),
-  "Morte Suspeita" = c('2013/01', '2022/12'),
-  "Roubo de Celular" = c('2010/01', '2022/12'),
-  "Roubo de Veículo" = c('2003/01' , '2022/12'),
-  "Furto de Celular" = c('2010/01', '2022/12'),
-  "Furto de Veículo" = c('2003/01' , '2022/12'),
-  "IML (Instituto Médico Legal)" = c('2013/01', '2022/12'),
-  "Dados Criminais" = c('2022/01' , '2022/12')
-)
 
 # Ui
 ui <- dashboardPage(
@@ -1703,8 +1814,6 @@ ui <- dashboardPage(
 
 #Server
 
-#Server
-
 
 server <- function(input, output, session) {
   #### Variaveis reativas (variaveis globais que podem trocar de valores com a interação do usuário)
@@ -1738,7 +1847,7 @@ server <- function(input, output, session) {
   Lista_Trans <- reactiveVal(list(NULL))
   Lista_Serie <- reactiveVal(list(NULL))
   Lista_atributo <- reactiveVal(NULL)
-  Lista_Tempo <- reactiveVal(c("semanal","mensal","trimestral","semestral","anual"))
+  Lista_Tempo <- reactiveVal(c("semanal","mensal","trimestral","anual"))
   Lista_Diff <- reactiveVal(list(NULL))
   Serie_Atual <- reactiveVal(NULL)
   Serie_Atual_Modelo <- reactiveVal(NULL)
@@ -1816,14 +1925,15 @@ server <- function(input, output, session) {
               ),
               
               if (tema() == "IML (Instituto Médico Legal)") {
-                
+                shinyjs::disable("map")
                 Side1(Side_iml)
                 
                 if (is.null(dado7())) {
                   showNotification("Carregando os dados. Aguarde!",type = "message",duration = 3)
                   dado7(fread("iml_parcial.csv"))
                   dado7(dado7() %>% mutate(data_ocorr = as.Date(datahora_iml_reg)))
-                  dado7(dado7() %>% mutate(data_bo_reg = as.Date(datahora_iml_reg)))
+                  dado7(dado7() %>% mutate(data_bo_reg = as.Date(datahora_iml_reg),
+                                           idade_pessoa = idade_vitima))
                 }
                 dado_real(dado7())
                 box(width = NULL,
@@ -2772,8 +2882,6 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$aplicar, {
-    shinyjs::enable("map")
-    shinyjs::enable("series")
     ##limpar
     faixa_etaria <- NULL
     data <- NULL
@@ -2787,11 +2895,14 @@ server <- function(input, output, session) {
     corp <- NULL
     ##
     faixa_etaria <- input$idade_slider
+    idade1 <- as.integer((input$idade_slider2)[1])
+    idade2 <- as.integer((input$idade_slider2)[2])
     data <- input$dateRange2
     cor <- input$cor_pele
     tveiculo <- input$tipo_veiculo
-    anov <- input$ano_mod_veiculo
-    qtd_cel <- input$quantidade_celular
+    anov <- input$ano_veiculo
+    qtd_cel1 <- as.integer((input$quantidade_celular)[1])
+    qtd_cel2 <- as.integer((input$quantidade_celular)[2])
     descr_local <- input$descr_local
     natureza <- input$natureza  
     sexo <- input$sexo
@@ -2817,6 +2928,11 @@ server <- function(input, output, session) {
           filtro <- filtro & (dado_real()$idade_pessoa >= faixa_etaria[1] & dado_real()$idade_pessoa <= faixa_etaria[2])
         }}
       
+      if(tema()== "IML (Instituto Médico Legal)"){
+        if (!is.null(idade1) & !is.null(idade2) ) {
+          filtro <- filtro & (dado_real()$idade_pessoa >= idade1 & dado_real()$idade_pessoa <= idade2)
+        }}
+      
       if (tema()== "Homicídio"| tema()== "Latrocínio" | tema()== "Lesão Corporal Seguida de Morte" | tema()=="Morte Decorrente de Intervenção Policial" ) {
         if (!is.null(sexo)) {
           filtro <- filtro & (dado_real()$sexo_pessoa %in% sexo)
@@ -2838,12 +2954,12 @@ server <- function(input, output, session) {
         }
         
         if (!is.null(anov)) {
-          filtro <- filtro & (dado_real()$ano_veiculo %in% anov)
+          filtro <- filtro & (dado_real()$ano_mod_veiculo %in% anov)
         }}
       
       if(tema()=="Roubo de Celular" | tema()=="Furto de Celular"){
-        if (!is.null(qtd_cel)) {
-          filtro <- filtro & (dado_real()$qtde_celular >= qtd_cel[1] & dado_real()$qtde_celular <= qtd_cel[2])
+        if (!is.null(qtd_cel1) & !is.null(qtd_cel2)) {
+          filtro <- filtro & (dado_real()$qtde_celular >= qtd_cel1 & dado_real()$qtde_celular <= qtd_cel2)
         }}
       
       if(tema()=="Roubo de Celular" | tema()=="Furto de Celular" | tema()=="Morte Suspeita" | tema()=="Dados Criminais"){
@@ -3329,8 +3445,11 @@ server <- function(input, output, session) {
   output$auto1 <- renderPlotly({
     Graph <- NULL
     serie <- Serie_Atual()
+    colnames(serie)[2] <- "total"
     
-    Graph <- autoplot(serie %>% ACF()) +
+    lag_max = serie %>% pull(total) %>% length()
+    
+    Graph <- autoplot(serie %>% ACF(lag_max = lag_max )) +
       theme_pubclean() +
       xlab(Graph_Tempo()) +
       ggtitle(paste("Autocorrelação")) +
@@ -3347,11 +3466,14 @@ server <- function(input, output, session) {
   output$auto2 <- renderPlotly({
     Graph <- NULL
     serie <- Serie_Atual()
+    colnames(serie)[2] <- "total"
     
-    Graph <- autoplot(serie %>% PACF()) +
+    lag_max = serie %>% pull(total) %>% length()
+    
+    Graph <- autoplot(serie %>% PACF(lag_max = lag_max)) +
       theme_pubclean() +
       xlab(Graph_Tempo()) +
-      ggtitle(paste("Autocorrelação")) +
+      ggtitle(paste("Autocorrelação Parcial")) +
       theme(plot.title = element_text(hjust = 0.5))
     
     plotly_chart <- ggplotly(Graph)
@@ -3852,4 +3974,6 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui, server)
+
+
 
